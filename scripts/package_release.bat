@@ -33,7 +33,11 @@ copy "src-tauri\target\release\blewred.exe" "%PORTABLE_DIR%\" >nul
 xcopy "ui" "%PORTABLE_DIR%\ui" /e /i /q /y >nul
 xcopy "config" "%PORTABLE_DIR%\config" /e /i /q /y >nul
 xcopy "extensions\chrome" "%PORTABLE_DIR%\extensions\chrome" /e /i /q /y >nul
-copy "plugins\obs-blewred\dist\obs-blewred.dll" "%PORTABLE_DIR%\plugins\obs-blewred\dist\" >nul
+if exist "plugins\obs-blewred\dist\obs-blewred.dll" (
+    copy "plugins\obs-blewred\dist\obs-blewred.dll" "%PORTABLE_DIR%\plugins\obs-blewred\dist\" >nul
+) else (
+    copy "plugins\obs-blewred\obs-blewred.dll" "%PORTABLE_DIR%\plugins\obs-blewred\dist\" >nul
+)
 copy "models\README.txt" "%PORTABLE_DIR%\models\" >nul
 copy "models\.gitkeep" "%PORTABLE_DIR%\models\" >nul
 copy "scripts\install_obs_plugin.bat" "%PORTABLE_DIR%\" >nul

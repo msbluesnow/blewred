@@ -9,6 +9,9 @@ echo.
 
 set "PLUGIN_SRC=%~dp0..\plugins\obs-blewred\dist\obs-blewred.dll"
 if not exist "%PLUGIN_SRC%" (
+    set "PLUGIN_SRC=%~dp0..\plugins\obs-blewred\obs-blewred.dll"
+)
+if not exist "%PLUGIN_SRC%" (
     echo [ERROR] Plugin binary obs-blewred.dll not found: "%PLUGIN_SRC%"
     pause
     exit /b 1

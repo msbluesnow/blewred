@@ -60,7 +60,7 @@ Source: "..\..\ui\*"; DestDir: "{app}\ui"; Flags: ignoreversion recursesubdirs c
 Source: "..\..\extensions\*"; DestDir: "{app}\extensions"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Native OBS Plugin DLL
-Source: "..\..\plugins\obs-blewred\dist\obs-blewred.dll"; DestDir: "{app}\plugins\obs-blewred\dist"; Flags: ignoreversion
+Source: "..\..\plugins\obs-blewred\obs-blewred.dll"; DestDir: "{app}\plugins\obs-blewred\dist"; Flags: ignoreversion
 
 ; Configuration (only copy default configs if they do NOT exist, preserving user custom settings on upgrades)
 Source: "..\..\config\*"; DestDir: "{app}\config"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist uninsneveruninstall

@@ -40,6 +40,12 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup --no-progress
 
+      - name: Prepare Plugin Binary
+        shell: bash
+        run: |
+          mkdir -p plugins/obs-blewred/dist
+          cp plugins/obs-blewred/obs-blewred.dll plugins/obs-blewred/dist/
+
       - name: Build Inno Setup Installer
         run: iscc build/installer/setup.iss
 

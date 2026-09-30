@@ -47,8 +47,11 @@ if "%NEED_CLEAN%"=="1" (
 
 REM Quick attempt to copy native OBS plugin if target is writable
 if exist "%ProgramFiles%\obs-studio\obs-plugins\64bit" (
-    if not exist "%ProgramFiles%\obs-studio\obs-plugins\64bit\obs-blewred.dll" (
-        copy /Y "%~dp0plugins\obs-blewred\dist\obs-blewred.dll" "%ProgramFiles%\obs-studio\obs-plugins\64bit\" >nul 2>&1
+        if exist "%~dp0plugins\obs-blewred\dist\obs-blewred.dll" (
+            copy /Y "%~dp0plugins\obs-blewred\dist\obs-blewred.dll" "%ProgramFiles%\obs-studio\obs-plugins\64bit\" >nul 2>&1
+        ) else if exist "%~dp0plugins\obs-blewred\obs-blewred.dll" (
+            copy /Y "%~dp0plugins\obs-blewred\obs-blewred.dll" "%ProgramFiles%\obs-studio\obs-plugins\64bit\" >nul 2>&1
+        )
     )
 )
 
