@@ -863,7 +863,7 @@ impl WSBridge {
                 let vis_clone = vis_guard.clone();
                 let gen_before = MODE_GENERATION.load(Ordering::Relaxed);
 
-                // Run screen capture, neural MobileNetV2 NSFW inference and OCR in spawn_blocking
+                // Run screen capture, neural ViT & NudeNet NSFW inference and OCR in spawn_blocking
                 // so it NEVER blocks the Tokio event loop!
                 let frame_res = tokio::task::spawn_blocking(move || {
                     vis_clone.analyze_frame_realtime(m_idx)

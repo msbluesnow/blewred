@@ -914,7 +914,7 @@
       "hotkeys_btn_record": "Record",
       "hotkeys_btn_recording": "Recording...",
       "hotkeys_recording_prompt": "Press key combination (e.g. Ctrl+Shift+F9)...",
-      "hotkeys_release_hint": "release any key to save",      "hotkeys_holding_prefix": "Holding: ",
+      "hotkeys_release_hint": "release any key to save", "hotkeys_holding_prefix": "Holding: ",
       "hotkeys_opt_fn": "F-Keys (F1–F24)",
       "hotkeys_opt_digits": "Digits",
       "hotkeys_opt_letters": "Letters",

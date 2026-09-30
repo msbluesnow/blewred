@@ -89,6 +89,9 @@ jobs:
           7z a -tzip "../../release_artifacts/blewred-browser-extension-${VERSION}.zip" *
           cd ../..
 
+          # Copy standalone native OBS filter plugin DLL
+          cp plugins/obs-blewred/obs-blewred.dll release_artifacts/
+
           # Copy Tauri NSIS installer if generated
           find src-tauri/target/release/bundle -name "*.exe" -exec cp {} release_artifacts/ \; || true
 
