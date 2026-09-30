@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>blewred</title>
+  <link rel="icon" type="image/jpeg" href="blewred_dualver.jpg">
+  <style>
+    @font-face {
+      font-family: "Adwaita Sans";
+      src: url("fonts/AdwaitaSans-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Mono";
+      src: url("fonts/AdwaitaMono-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Mono";
+      src: url("fonts/AdwaitaMono-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0d0f13;
+      font-family: "Adwaita Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #d1d5db;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    /* Bootstrap 3 Dark Edition: Main Floating Window Container */
+    .preview-window-panel {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background-color: #15181f;
+      border: 1px solid #282f3a;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Draggable Header Titlebar */
+    .panel-heading {
+      padding: 7px 10px;
+      border-bottom: 1px solid #282f3a;
+      background: linear-gradient(to bottom, #232832 0%, #171a21 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: grab;
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+      height: 38px;
+    }
+
+    .panel-heading:active {
+      cursor: grabbing;
+    }
+
+    .panel-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .pulsing-radar-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #10b981;
+      animation: radarPulseGreen 1.6s infinite alternate;
+    }
+
+    .pulsing-radar-dot.threat {
+      background: #ff4141;
+      box-shadow: 0 0 8px #ff4141;
+      animation: radarPulseRed 0.8s infinite alternate;
+    }
+
+    .pulsing-radar-dot.idle {
+      background: #64748b;
+      box-shadow: none;
+      animation: none;
+    }
+
+    @keyframes radarPulseGreen {
+      from { opacity: 0.6; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1.2); box-shadow: 0 0 10px #10b981; }
+    }
+
+    @keyframes radarPulseRed {
+      from { opacity: 0.7; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1.25); box-shadow: 0 0 12px #ff4141; }
+    }
+
+    .panel-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.4px;
+      text-transform: lowercase;
+      margin: 0;
+    }
+
+    .badge-sub {
+      font-size: 9.5px;
+      font-weight: 700;
+      background-color: #121418;
+      border: 1px solid #2b313c;
+      color: #94a3b8;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: "Adwaita Mono", monospace;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      -webkit-app-region: no-drag;
+    }
+
+    .label {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #ffffff;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .label-success {
+      background-color: #10b981;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+    }
+
+    .label-danger {
+      background-color: #ff4141;
+      box-shadow: 0 0 8px rgba(255, 65, 65, 0.5);
+    }
+
+    .label-warning {
+      background-color: #f59e0b;
+      box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-tool {
+      background: #1c2027;
+      border: 1px solid #2b313c;
+      color: #94a3b8;
+      border-radius: 3px;
+      width: 24px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 11px;
+      line-height: 1;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .btn-tool:hover {
+      background: #2b323e;
+      color: #ffffff;
+      border-color: #3b4252;
+    }
+
+    .btn-tool.active-pin {
+      background: #0077c2;
+      border-color: #19aeff;
+      color: #ffffff;
+      box-shadow: 0 0 6px rgba(25, 174, 255, 0.4);
+    }
+
+    .btn-tool.btn-close:hover {
+      background: #dc2626;
+      border-color: #ef4444;
+      color: #ffffff;
+    }
+
+    /* Main Video Viewport */
+    .viewport-container {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      background-color: #060709;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: box-shadow 0.25s ease;
+    }
+
+    .viewport-container.threat-active {
+      box-shadow: inset 0 0 26px rgba(255, 45, 65, 0.65), 0 0 10px rgba(255, 45, 65, 0.45);
+    }
+
+    .preview-video-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      transition: filter 0.2s ease;
+    }
+
+    .preview-boxes-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* HUD Badges Inside Viewport */
+    .hud-tag {
+      position: absolute;
+      background: rgba(13, 15, 19, 0.88);
+      border: 1px solid #282f3a;
+      border-radius: 4px;
+      padding: 3px 7px;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #f1f5f9;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      pointer-events: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+      font-family: "Adwaita Mono", monospace;
+    }
+
+    .hud-tag-live {
+      top: 8px;
+      left: 8px;
+      border-color: rgba(56, 189, 248, 0.45);
+      color: #38bdf8;
+    }
+
+    .hud-tag-live .live-dot {
+      width: 6px;
+      height: 6px;
+      background: #38bdf8;
+      border-radius: 50%;
+      animation: radarPulseGreen 1.4s infinite alternate;
+    }
+
+    .hud-tag-time {
+      top: 8px;
+      right: 8px;
+      border-color: rgba(148, 163, 184, 0.3);
+      color: #94a3b8;
+    }
+
+    .hud-tag-threat {
+      bottom: 8px;
+      left: 8px;
+      border-color: rgba(255, 65, 65, 0.6);
+      background: rgba(36, 17, 19, 0.92);
+      color: #ff8585;
+      display: none;
+    }
+
+    /* Standby Overlay */
+    .standby-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0b0d11;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+      text-align: center;
+      z-index: 5;
+    }
+
+    .standby-icon-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #15181f;
+      border: 1px solid #2b313c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .standby-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f1f5f9;
+      letter-spacing: 0.3px;
+    }
+
+    .standby-sub {
+      font-size: 11px;
+      color: #94a3b8;
+      max-width: 380px;
+      line-height: 1.4;
+    }
+
+    /* Bottom Control Bar */
+    .preview-footer {
+      padding: 6px 10px;
+      background: #111419;
+      border-top: 1px solid #282f3a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      font-size: 10.5px;
+      height: 36px;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .player-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #38bdf8;
+      background-color: #121418;
+      border: 1px solid #2b313c;
+      border-radius: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+
+    .meta-tag {
+      color: #64748b;
+      font-family: "Adwaita Mono", monospace;
+      font-size: 9.5px;
+      white-space: nowrap;
+    }
+
+    .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 3px 8px;
+      font-size: 10.5px;
+      font-weight: 700;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      outline: none;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-default {
+      background: #1c2027;
+      border-color: #2b313c;
+      color: #94a3b8;
+    }
+
+    .btn-default:hover {
+      background: #2b323e;
+      color: #ffffff;
+    }
+
+    .btn-danger {
+      background: #b91c1c;
+      border-color: #ef4444;
+      color: #ffffff;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.35);
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-kbd {
+      display: inline-block;
+      padding: 0 4px;
+      font-size: 9px;
+      font-family: "Adwaita Mono", monospace;
+      font-weight: 700;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-window-panel">
+    <!-- Header Draggable Bar -->
+    <div class="panel-heading" data-tauri-drag-region>
+      <div class="panel-title-wrap">
+        <div class="pulsing-radar-dot" id="radar-dot"></div>
+        <h3 class="panel-title">blewred</h3>
+        <span class="badge-sub" data-i18n="lookahead_window_header_badge">УПРЕЖДАЮЩИЙ ПОТОК (LOOKAHEAD)</span>
+      </div>
+      <div class="header-actions">
+        <span class="label label-success" id="ai-score-badge" data-i18n="lookahead_window_safe">БЕЗОПАСНО</span>
+        <button type="button" class="btn-tool active-pin" id="btn-pin-window">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>
+        </button>
+        <button type="button" class="btn-tool" id="btn-minimize-window">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button type="button" class="btn-tool btn-close" id="btn-close-window">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Video Preview Viewport -->
+    <div class="viewport-container" id="viewport-container">
+      <img id="preview-video-img" class="preview-video-img" src="" alt="Опережающий кадр" data-i18n-aria="lookahead_window_img_alt">
+      <canvas id="preview-boxes-canvas" class="preview-boxes-canvas"></canvas>
+
+      <!-- Viewport Badges -->
+      <div class="hud-tag hud-tag-live">
+        <span class="live-dot"></span>
+        <span>LOOKAHEAD</span>
+        <span id="lead-seconds-text">LOOKAHEAD</span>
+      </div>
+
+      <div class="hud-tag hud-tag-time">
+        <span id="timeline-comparison">00:00 ➔ 00:10</span>
+      </div>
+
+      <div class="hud-tag hud-tag-threat" id="threat-indicator-tag">
+        <span data-i18n="lookahead_window_threat">ОБНАРУЖЕНА УГРОЗА</span>
+        <span id="threat-reason-text">NSFW (85%)</span>
+      </div>
+
+      <!-- Standby Overlay -->
+      <div class="standby-overlay" id="standby-overlay">
+        <div class="standby-icon-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+        </div>
+        <div class="standby-title" data-i18n="lookahead_window_status_waiting">Ожидание видеопотока из браузера...</div>
+        <div class="standby-sub" data-i18n="lookahead_window_status_sub">Откройте видео в плеере браузера с активным расширением blewred</div>
+        <button type="button" class="btn btn-default" id="btn-trigger-test-frame">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span data-i18n="lookahead_window_test_frame">Тестовый кадр</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Status & Actions Footer -->
+    <div class="preview-footer">
+      <div class="footer-left">
+        <span class="player-badge" id="player-badge">Web Player</span>
+        <span class="meta-tag" id="meta-spec">DirectML • ~3 FPS</span>
+      </div>
+      <div class="footer-right">
+        <button type="button" class="btn btn-danger" id="btn-quick-censor">
+          <span class="btn-kbd">F9</span>
+          <span data-i18n="lookahead_btn_block_screen">ЗАБЛОКИРОВАТЬ ЭКРАН В OBS</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script>
+    // 1. Core Elements
+    const radarDot = document.getElementById("radar-dot");
+    const aiScoreBadge = document.getElementById("ai-score-badge");
+    const btnPin = document.getElementById("btn-pin-window");
+    const btnMinimize = document.getElementById("btn-minimize-window");
+    const btnClose = document.getElementById("btn-close-window");
+    const previewImg = document.getElementById("preview-video-img");
+    const boxesCanvas = document.getElementById("preview-boxes-canvas");
+    const leadSecondsText = document.getElementById("lead-seconds-text");
+    const timelineComparison = document.getElementById("timeline-comparison");
+    const threatTag = document.getElementById("threat-indicator-tag");
+    const threatReasonText = document.getElementById("threat-reason-text");
+    const standbyOverlay = document.getElementById("standby-overlay");
+    const btnTestFrame = document.getElementById("btn-trigger-test-frame");
+    const playerBadge = document.getElementById("player-badge");
+    const metaSpec = document.getElementById("meta-spec");
+    const btnQuickCensor = document.getElementById("btn-quick-censor");
+
+    let isPinned = true;
+    let ws = null;
+    let lastFrameTime = 0;
+    let frameCount = 0;
+    let fpsCalcTime = Date.now();
+    let currentFps = 0;
+    let lastPreviewData = null;
+
+    // Apply i18n
+    function applyLocalization() {
+      if (window.I18N && typeof window.I18N.applyToDOM === "function") {
+        window.I18N.applyToDOM();
+      }
+    }
+    applyLocalization();
+
+    // 2. Format Seconds Helper
+    function formatTime(sec) {
+      if (isNaN(sec) || sec < 0) sec = 0;
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    // Helper to calculate exact image rectangle within object-fit: contain viewport
+    function getImageRenderRect() {
+      const w = boxesCanvas.width;
+      const h = boxesCanvas.height;
+      if (!previewImg || !previewImg.naturalWidth || !previewImg.naturalHeight || previewImg.naturalWidth === 0) {
+        return { x: 0, y: 0, width: w, height: h };
+      }
+      const imgAspect = previewImg.naturalWidth / previewImg.naturalHeight;
+      const canvasAspect = w / h;
+      let rw, rh, rx, ry;
+      if (canvasAspect > imgAspect) {
+        // Pillarbox (black bars on left/right)
+        rh = h;
+        rw = h * imgAspect;
+        rx = (w - rw) / 2;
+        ry = 0;
+      } else {
+        // Letterbox (black bars on top/bottom)
+        rw = w;
+        rh = w / imgAspect;
+        rx = 0;
+        ry = (h - rh) / 2;
+      }
+      return { x: rx, y: ry, width: rw, height: rh };
+    }
+
+    // 3. Draw Highlighting Bounding Boxes Over Preview Image
+    function drawBoxes(boxes, isThreat, score, label) {
+      if (!boxesCanvas) return;
+      const rect = boxesCanvas.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        boxesCanvas.width = rect.width;
+        boxesCanvas.height = rect.height;
+      }
+      const ctx = boxesCanvas.getContext("2d");
+      ctx.clearRect(0, 0, boxesCanvas.width, boxesCanvas.height);
+
+      const renderRect = getImageRenderRect();
+      const hasBoxes = Array.isArray(boxes) && boxes.length > 0;
+
+      if (!isThreat && !hasBoxes) {
+        return;
+      }
+
+      const scorePct = Math.round((score || 0) * 100);
+
+      // Scenario A: Specific bounding boxes detected
+      if (hasBoxes) {
+        boxes.forEach(b => {
+          const bx = renderRect.x + (b.x1 !== undefined ? b.x1 : (b.x || 0)) * renderRect.width;
+          const by = renderRect.y + (b.y1 !== undefined ? b.y1 : (b.y || 0)) * renderRect.height;
+          const bw = (b.x2 !== undefined ? (b.x2 - b.x1) : (b.width || 0.2)) * renderRect.width;
+          const bh = (b.y2 !== undefined ? (b.y2 - b.y1) : (b.height || 0.2)) * renderRect.height;
+
+          // Glowing border stroke
+          ctx.save();
+          ctx.shadowColor = "rgba(255, 30, 50, 0.9)";
+          ctx.shadowBlur = 10;
+          ctx.strokeStyle = "#ff2e4d";
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(bx, by, bw, bh);
+
+          // Translucent fill wash
+          ctx.fillStyle = "rgba(255, 40, 60, 0.22)";
+          ctx.fillRect(bx, by, bw, bh);
+          ctx.restore();
+
+          // Corner reticles / brackets for tactical computer vision aesthetic
+          const cornerLen = Math.max(6, Math.min(14, Math.min(bw, bh) * 0.3));
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          // Top-Left
+          ctx.moveTo(bx, by + cornerLen);
+          ctx.lineTo(bx, by);
+          ctx.lineTo(bx + cornerLen, by);
+          // Top-Right
+          ctx.moveTo(bx + bw - cornerLen, by);
+          ctx.lineTo(bx + bw, by);
+          ctx.lineTo(bx + bw, by + cornerLen);
+          // Bottom-Left
+          ctx.moveTo(bx, by + bh - cornerLen);
+          ctx.lineTo(bx, by + bh);
+          ctx.lineTo(bx + cornerLen, by + bh);
+          // Bottom-Right
+          ctx.moveTo(bx + bw - cornerLen, by + bh);
+          ctx.lineTo(bx + bw, by + bh);
+          ctx.lineTo(bx + bw, by + bh - cornerLen);
+          ctx.stroke();
+
+          // Badge label tag
+          const boxScore = Math.round((b.score || score || 0) * 100);
+          const rawLabel = b.label || label || "NSFW";
+          const tagText = rawLabel + " (" + boxScore + "%)";
+
+          ctx.font = "bold 10px 'Adwaita Mono', monospace, sans-serif";
+          const textMetrics = ctx.measureText(tagText);
+          const tagW = textMetrics.width + 10;
+          const tagH = 18;
+          const tagX = Math.max(renderRect.x, Math.min(bx, renderRect.x + renderRect.width - tagW));
+          const tagY = by >= renderRect.y + tagH + 2 ? by - tagH - 2 : by + 4;
+
+          // Tag background pill
+          ctx.save();
+          ctx.fillStyle = "rgba(220, 20, 45, 0.95)";
+          ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+          ctx.shadowBlur = 4;
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(tagX, tagY, tagW, tagH, 3);
+          } else {
+            ctx.rect(tagX, tagY, tagW, tagH);
+          }
+          ctx.fill();
+
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Tag text
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText(tagText, tagX + 5, tagY + 13);
+          ctx.restore();
+        });
+      } else if (isThreat) {
+        // Scenario B: Global full-frame threat detected (e.g. ViT stage or censor_all)
+        ctx.save();
+        ctx.shadowColor = "rgba(255, 30, 50, 0.9)";
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = "#ff2e4d";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(renderRect.x + 2, renderRect.y + 2, renderRect.width - 4, renderRect.height - 4);
+
+        ctx.fillStyle = "rgba(255, 40, 60, 0.14)";
+        ctx.fillRect(renderRect.x + 2, renderRect.y + 2, renderRect.width - 4, renderRect.height - 4);
+        ctx.restore();
+
+        // Corner accents on whole frame
+        const cornerLen = 20;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.moveTo(renderRect.x + 2, renderRect.y + 2 + cornerLen);
+        ctx.lineTo(renderRect.x + 2, renderRect.y + 2);
+        ctx.lineTo(renderRect.x + 2 + cornerLen, renderRect.y + 2);
+
+        ctx.moveTo(renderRect.x + renderRect.width - 2 - cornerLen, renderRect.y + 2);
+        ctx.lineTo(renderRect.x + renderRect.width - 2, renderRect.y + 2);
+        ctx.lineTo(renderRect.x + renderRect.width - 2, renderRect.y + 2 + cornerLen);
+
+        ctx.moveTo(renderRect.x + 2, renderRect.y + renderRect.height - 2 - cornerLen);
+        ctx.lineTo(renderRect.x + 2, renderRect.y + renderRect.height - 2);
+        ctx.lineTo(renderRect.x + 2 + cornerLen, renderRect.y + renderRect.height - 2);
+
+        ctx.moveTo(renderRect.x + renderRect.width - 2 - cornerLen, renderRect.y + renderRect.height - 2);
+        ctx.lineTo(renderRect.x + renderRect.width - 2, renderRect.y + renderRect.height - 2);
+        ctx.lineTo(renderRect.x + renderRect.width - 2, renderRect.y + renderRect.height - 2 - cornerLen);
+        ctx.stroke();
+
+        // Full-frame banner badge
+        const bannerText = "⚠️ " + (window.I18N && window.I18N.t ? window.I18N.t("lookahead_window_full_frame_threat") : "УГРОЗА (ПОЛНЫЙ КАДР)") + " (" + scorePct + "%)";
+        ctx.font = "bold 11px 'Adwaita Mono', monospace, sans-serif";
+        const bMetrics = ctx.measureText(bannerText);
+        const bW = bMetrics.width + 16;
+        const bH = 22;
+        const bX = renderRect.x + (renderRect.width - bW) / 2;
+        const bY = renderRect.y + 12;
+
+        ctx.save();
+        ctx.fillStyle = "rgba(220, 20, 45, 0.95)";
+        ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(bX, bY, bW, bH, 4);
+        } else {
+          ctx.rect(bX, bY, bW, bH);
+        }
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(bannerText, bX + 8, bY + 15);
+        ctx.restore();
+      }
+    }
+
+    // 4. Render Incoming Lookahead Preview Data
+    function renderPreview(data) {
+      if (!data) return;
+      lastPreviewData = data;
+
+      // Hide Standby Screen
+      if (standbyOverlay) {
+        standbyOverlay.style.display = "none";
+      }
+
+      // FPS tracking
+      frameCount++;
+      const now = Date.now();
+      if (now - fpsCalcTime >= 1000) {
+        currentFps = frameCount;
+        frameCount = 0;
+        fpsCalcTime = now;
+      }
+
+      // Update Player & Timeline Meta
+      if (playerBadge) {
+        playerBadge.textContent = data.player_type || "Web Player";
+      }
+      if (leadSecondsText) {
+        const lead = data.lead_seconds !== undefined ? data.lead_seconds : 0.0;
+        if (lead >= 1.0) {
+          leadSecondsText.textContent = "+" + lead.toFixed(1) + "s";
+          leadSecondsText.parentElement.style.borderColor = "#38bdf8";
+        } else {
+          leadSecondsText.textContent = "+0.0s (ON-SCREEN)";
+          leadSecondsText.parentElement.style.borderColor = "#f59e0b";
+        }
+      }
+      if (timelineComparison) {
+        const curT = formatTime(data.current_time_sec || 0);
+        const lookT = formatTime(data.lookahead_time_sec || data.current_time_sec);
+        timelineComparison.textContent = curT + " ➔ " + lookT;
+      }
+
+      // Update Threat State & Score
+      const scorePct = Math.round((data.score || 0) * 100);
+      const isThreat = !!data.is_threat;
+
+      const viewport = document.getElementById("viewport-container");
+      if (viewport) {
+        if (isThreat) {
+          viewport.classList.add("threat-active");
+        } else {
+          viewport.classList.remove("threat-active");
+        }
+      }
+
+      if (isThreat) {
+        radarDot.className = "pulsing-radar-dot threat";
+        aiScoreBadge.className = "label label-danger";
+        aiScoreBadge.textContent = "NSFW (" + scorePct + "%)";
+        if (threatTag) {
+          threatTag.style.display = "flex";
+          threatReasonText.textContent = (data.label || "Угроза") + " (" + scorePct + "%)";
+        }
+      } else {
+        radarDot.className = "pulsing-radar-dot";
+        aiScoreBadge.className = "label label-success";
+        aiScoreBadge.textContent = (window.I18N && window.I18N.t ? window.I18N.t("lookahead_window_safe") : "БЕЗОПАСНО") + " (" + scorePct + "%)";
+        if (threatTag) {
+          threatTag.style.display = "none";
+        }
+      }
+
+      // Render Image Frame
+      if (data.image_base64 && data.image_base64.length > 30) {
+        const prefix = data.image_base64.startsWith("data:") ? "" : "data:image/jpeg;base64,";
+        previewImg.src = prefix + data.image_base64;
+      }
+
+      if (metaSpec) {
+        metaSpec.textContent = (currentFps > 0 ? (currentFps + " FPS • ") : "") + "DirectML ViT";
+      }
+
+      drawBoxes(data.boxes, isThreat, data.score, data.label);
+    }
+
+    // 5. Header Dragging Logic (Windows Desktop Drag)
+    const header = document.querySelector(".panel-heading");
+    if (header) {
+      header.addEventListener("mousedown", (e) => {
+        if (e.target.closest("button") || e.target.closest(".no-drag") || e.target.closest(".header-actions")) {
+          return;
+        }
+        if (e.button === 0) { // Left click
+          try {
+            if (window.__TAURI__ && window.__TAURI__.window) {
+              window.__TAURI__.window.getCurrentWindow().startDragging();
+            }
+          } catch (err) {}
+        }
+      });
+    }
+
+    // 6. Window Controls
+    btnPin.addEventListener("click", async () => {
+      isPinned = !isPinned;
+      try {
+        if (window.__TAURI__ && window.__TAURI__.window) {
+          await window.__TAURI__.window.getCurrentWindow().setAlwaysOnTop(isPinned);
+        }
+      } catch (err) {}
+      if (isPinned) {
+        btnPin.classList.add("active-pin");
+      } else {
+        btnPin.classList.remove("active-pin");
+      }
+    });
+
+    btnMinimize.addEventListener("click", () => {
+      try {
+        if (window.__TAURI__ && window.__TAURI__.window) {
+          window.__TAURI__.window.getCurrentWindow().minimize();
+        }
+      } catch (err) {}
+    });
+
+    function closePreviewWindow() {
+      try {
+        if (window.__TAURI__ && window.__TAURI__.core) {
+          window.__TAURI__.core.invoke("hide_lookahead_preview").catch(() => {});
+        } else if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "close_lookahead_preview" }));
+        }
+      } catch (e) {}
+      try {
+        if (window.__TAURI__ && window.__TAURI__.window) {
+          window.__TAURI__.window.getCurrentWindow().hide();
+        }
+      } catch (e) {}
+    }
+
+    btnClose.addEventListener("click", closePreviewWindow);
+
+    // 7. Emergency Block in OBS
+    function executeObsBlock() {
+      try {
+        if (window.__TAURI__ && window.__TAURI__.core) {
+          window.__TAURI__.core.invoke("toggle_emergency_shield", { reason: "Preview Window Panic Block" }).catch(() => {});
+        } else if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "toggle_emergency_shield",
+            reason: "Preview Window Panic Block"
+          }));
+        }
+      } catch (e) {}
+    }
+
+    btnQuickCensor.addEventListener("click", executeObsBlock);
+
+    // 8. Test Frame Trigger
+    if (btnTestFrame) {
+      btnTestFrame.addEventListener("click", () => {
+        try {
+          if (window.__TAURI__ && window.__TAURI__.core) {
+            window.__TAURI__.core.invoke("test_lookahead_preview_frame").catch(() => {});
+          }
+        } catch (e) {}
+      });
+    }
+
+    // 9. Hotkeys Engine (OBS block toggle, Esc to hide window)
+    let savedPanicKey = "F9";
+    try {
+      savedPanicKey = localStorage.getItem("blewred_hotkey_panic") || "F9";
+    } catch (e) {}
+
+    function getKeyDisplayName(e) {
+      if (!e) return "F9";
+      const code = e.code || "";
+      const key = e.key || "";
+      if (code.startsWith("F") && code.length <= 3 && !isNaN(parseInt(code.slice(1)))) return code.toUpperCase();
+      if (key.startsWith("F") && key.length <= 3 && !isNaN(parseInt(key.slice(1)))) return key.toUpperCase();
+      if (code.startsWith("Key") && code.length === 4) return code.slice(3).toUpperCase();
+      if (code.startsWith("Digit") && code.length === 6) return code.slice(5);
+      if (code.startsWith("Numpad") && !isNaN(parseInt(code.slice(6)))) return code.slice(6);
+      switch (code) {
+        case "Space": return "SPACE";
+        case "Tab": return "TAB";
+        case "Enter": return "ENTER";
+        case "Escape": return "ESC";
+        case "Backspace": return "BACKSPACE";
+        case "Delete": return "DELETE";
+        case "Insert": return "INSERT";
+        case "Home": return "HOME";
+        case "End": return "END";
+        case "PageUp": return "PAGEUP";
+        case "PageDown": return "PAGEDOWN";
+        case "Pause": return "PAUSE";
+        case "ArrowUp": return "UP";
+        case "ArrowDown": return "DOWN";
+        case "ArrowLeft": return "LEFT";
+        case "ArrowRight": return "RIGHT";
+      }
+      if (key === " ") return "SPACE";
+      return key.toUpperCase();
+    }
+
+    function parseHotkeyCombo(combo) {
+      const res = { ctrl: false, alt: false, shift: false, meta: false, key: "F9" };
+      if (!combo) return res;
+      const parts = String(combo).replace(/-/g, "+").split("+").map(s => s.trim()).filter(Boolean);
+      if (parts.length === 0) return res;
+
+      if (parts.length === 1) {
+        const single = parts[0];
+        const upper = single.toUpperCase();
+        if (upper === "LEFT CTRL" || upper === "LCTRL" || upper === "CONTROLLEFT") {
+          res.ctrl = true;
+          res.key = "Left Ctrl";
+        } else if (upper === "RIGHT CTRL" || upper === "RCTRL" || upper === "CONTROLRIGHT") {
+          res.ctrl = true;
+          res.key = "Right Ctrl";
+        } else if (upper === "CTRL" || upper === "CONTROL") {
+          res.ctrl = true;
+          res.key = "Ctrl";
+        } else if (upper === "LEFT SHIFT" || upper === "LSHIFT" || upper === "SHIFTLEFT") {
+          res.shift = true;
+          res.key = "Left Shift";
+        } else if (upper === "RIGHT SHIFT" || upper === "RSHIFT" || upper === "SHIFTRIGHT") {
+          res.shift = true;
+          res.key = "Right Shift";
+        } else if (upper === "SHIFT") {
+          res.shift = true;
+          res.key = "Shift";
+        } else if (upper === "LEFT ALT" || upper === "LALT" || upper === "ALTLEFT") {
+          res.alt = true;
+          res.key = "Left Alt";
+        } else if (upper === "RIGHT ALT" || upper === "RALT" || upper === "ALTRIGHT") {
+          res.alt = true;
+          res.key = "Right Alt";
+        } else if (upper === "ALT") {
+          res.alt = true;
+          res.key = "Alt";
+        } else {
+          res.key = upper === "FN" ? "F9" : single;
+        }
+        return res;
+      }
+
+      let baseKey = "";
+      for (const part of parts) {
+        const p = part.toUpperCase();
+        if (p === "CTRL" || p === "CONTROL" || p === "LEFT CTRL" || p === "RIGHT CTRL" || p === "LCTRL" || p === "RCTRL") res.ctrl = true;
+        else if (p === "ALT" || p === "LEFT ALT" || p === "RIGHT ALT" || p === "LALT" || p === "RALT") res.alt = true;
+        else if (p === "SHIFT" || p === "LEFT SHIFT" || p === "RIGHT SHIFT" || p === "LSHIFT" || p === "RSHIFT") res.shift = true;
+        else if (p === "WIN" || p === "META" || p === "SUPER" || p === "OS") res.meta = true;
+        else {
+          baseKey = part.toUpperCase();
+          if (baseKey === "FN") baseKey = "F9";
+        }
+      }
+      res.key = baseKey || parts[parts.length - 1];
+      return res;
+    }
+
+    function matchesPanicHotkey(e) {
+      if (!savedPanicKey) return e.key === "F9";
+      const parsed = parseHotkeyCombo(savedPanicKey);
+      const targetKeyUpper = (parsed.key || "").toUpperCase();
+
+      if (targetKeyUpper === "LEFT CTRL" || targetKeyUpper === "LCTRL" || targetKeyUpper === "CONTROLLEFT") return e.code === "ControlLeft";
+      if (targetKeyUpper === "RIGHT CTRL" || targetKeyUpper === "RCTRL" || targetKeyUpper === "CONTROLRIGHT") return e.code === "ControlRight";
+      if (targetKeyUpper === "CTRL" || targetKeyUpper === "CONTROL") return e.code === "ControlLeft" || e.code === "ControlRight" || e.key === "Control";
+      if (targetKeyUpper === "LEFT SHIFT" || targetKeyUpper === "SHIFTLEFT") return e.code === "ShiftLeft";
+      if (targetKeyUpper === "RIGHT SHIFT" || targetKeyUpper === "SHIFTRIGHT") return e.code === "ShiftRight";
+      if (targetKeyUpper === "SHIFT") return e.code === "ShiftLeft" || e.code === "ShiftRight" || e.key === "Shift";
+      if (targetKeyUpper === "LEFT ALT" || targetKeyUpper === "ALTLEFT") return e.code === "AltLeft";
+      if (targetKeyUpper === "RIGHT ALT" || targetKeyUpper === "ALTRIGHT") return e.code === "AltRight";
+      if (targetKeyUpper === "ALT") return e.code === "AltLeft" || e.code === "AltRight" || e.key === "Alt";
+
+      if (targetKeyUpper === "SHIFT" || targetKeyUpper === "LEFT SHIFT" || targetKeyUpper === "RIGHT SHIFT") {
+        if (parsed.ctrl && !e.ctrlKey) return false;
+        if (parsed.alt && !e.altKey) return false;
+        if (parsed.meta && !e.metaKey) return false;
+        return e.code.startsWith("Shift") || e.key === "Shift";
+      }
+      if (targetKeyUpper === "CTRL" || targetKeyUpper === "LEFT CTRL" || targetKeyUpper === "RIGHT CTRL") {
+        if (parsed.shift && !e.shiftKey) return false;
+        if (parsed.alt && !e.altKey) return false;
+        if (parsed.meta && !e.metaKey) return false;
+        return e.code.startsWith("Control") || e.key === "Control";
+      }
+      if (targetKeyUpper === "ALT" || targetKeyUpper === "LEFT ALT" || targetKeyUpper === "RIGHT ALT") {
+        if (parsed.ctrl && !e.ctrlKey) return false;
+        if (parsed.shift && !e.shiftKey) return false;
+        if (parsed.meta && !e.metaKey) return false;
+        return e.code.startsWith("Alt") || e.key === "Alt";
+      }
+
+      if (!!e.ctrlKey !== parsed.ctrl) return false;
+      if (!!e.altKey !== parsed.alt) return false;
+      if (!!e.shiftKey !== parsed.shift) return false;
+      if (!!e.metaKey !== parsed.meta) return false;
+
+      const pressedKey = getKeyDisplayName(e).toUpperCase();
+      return pressedKey === targetKeyUpper;
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (matchesPanicHotkey(e)) {
+        e.preventDefault();
+        executeObsBlock();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        closePreviewWindow();
+      }
+    });
+
+    // 10. Native Tauri Event Listeners & Initial State
+    if (window.__TAURI__ && window.__TAURI__.event) {
+      window.__TAURI__.event.listen("lookahead_preview_frame", (evt) => {
+        renderPreview(evt.payload);
+      });
+    }
+
+    // Load initial latest preview frame if available
+    try {
+      if (window.__TAURI__ && window.__TAURI__.core) {
+        window.__TAURI__.core.invoke("get_latest_lookahead_preview").then(data => {
+          if (data) {
+            renderPreview(data);
+          }
+        }).catch(() => {});
+      }
+    } catch (e) {}
+
+    // 11. WebSocket Fallback Bridge
+    function connectWs() {
+      try {
+        ws = new WebSocket("ws://127.0.0.1:51789");
+        ws.onopen = () => {
+          ws.send(JSON.stringify({ type: "register", client: "preview_window" }));
+          ws.send(JSON.stringify({ type: "get_lookahead_preview" }));
+        };
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "lookahead_preview_frame" && data.preview) {
+              renderPreview(data.preview);
+            } else if (data.type === "init_state" && data.latest_lookahead_preview) {
+              renderPreview(data.latest_lookahead_preview);
+            }
+          } catch (err) {}
+        };
+        ws.onclose = () => {
+          setTimeout(connectWs, 2500);
+        };
+      } catch (e) {
+        setTimeout(connectWs, 2500);
+      }
+    }
+    connectWs();
+
+    // Re-draw bounding boxes when preview image completes loading
+    previewImg.addEventListener("load", () => {
+      if (lastPreviewData) {
+        drawBoxes(lastPreviewData.boxes, lastPreviewData.is_threat, lastPreviewData.score, lastPreviewData.label);
+      }
+    });
+
+    // Resize Observer for dynamic canvas matching
+    const resizeObserver = new ResizeObserver(() => {
+      if (previewImg && boxesCanvas) {
+        boxesCanvas.width = boxesCanvas.clientWidth;
+        boxesCanvas.height = boxesCanvas.clientHeight;
+        if (lastPreviewData) {
+          drawBoxes(lastPreviewData.boxes, lastPreviewData.is_threat, lastPreviewData.score, lastPreviewData.label);
+        }
+      }
+    });
+    resizeObserver.observe(document.getElementById("viewport-container"));
+  </script>
+</body>
+</html>

@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>blewred</title>
+  <link rel="icon" type="image/jpeg" href="blewred_dualver.jpg">
+  <style>
+    @font-face {
+      font-family: "Adwaita Sans";
+      src: url("fonts/AdwaitaSans-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Mono";
+      src: url("fonts/AdwaitaMono-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Mono";
+      src: url("fonts/AdwaitaMono-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: #0d0f13;
+      font-family: "Adwaita Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #d1d5db;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+    }
+
+    /* ==========================================================================
+       Bootstrap 3 Dark Edition: Panel Danger HUD
+       ========================================================================== */
+    .hud-panel {
+      width: 100%;
+      height: 100%;
+      background-color: #181b21;
+      border: 1px solid #772b2e;
+      border-radius: 5px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.85), 0 0 24px rgba(255, 65, 65, 0.25);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      margin: 0;
+    }
+
+    .panel-heading {
+      padding: 9px 14px;
+      border-bottom: 1px solid #5a1d20;
+      background: linear-gradient(to bottom, #341517 0%, #201113 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: grab;
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+    }
+
+    .panel-heading:active {
+      cursor: grabbing;
+    }
+
+    .panel-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pulsing-radar-dot {
+      width: 9px;
+      height: 9px;
+      background: #ff4141;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #ff4141;
+      animation: radarBlink 1s infinite alternate;
+    }
+
+    @keyframes radarBlink {
+      from { opacity: 0.6; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1.2); box-shadow: 0 0 12px #ff4141; }
+    }
+
+    .panel-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #ff8585;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .hud-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .label {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #ffffff;
+      text-align: center;
+      white-space: nowrap;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .label-danger {
+      background-color: #ff4141;
+      box-shadow: 0 0 8px rgba(255, 65, 65, 0.4);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+    }
+
+    .label-warning {
+      background-color: #f59e0b;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #38bdf8;
+      background-color: #121418;
+      border: 1px solid #2b313c;
+      border-radius: 10px;
+      font-family: "Adwaita Mono", monospace;
+    }
+
+    .badge-score {
+      color: #ff8585;
+      border-color: #5a1d20;
+      background-color: rgba(20, 10, 12, 0.9);
+      box-shadow: 0 0 6px rgba(255, 65, 65, 0.3);
+    }
+
+    .close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 4px;
+      margin-left: 2px;
+      transition: color 0.15s;
+    }
+
+    .close:hover {
+      color: #ffffff;
+    }
+
+    .panel-body {
+      padding: 12px 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background-color: #15181f;
+      overflow: hidden;
+    }
+
+    /* 1. Top Section: Prominent Preview Hero & Reason Banner */
+    .preview-hero-card {
+      background: #0e1116;
+      border: 1px solid #3c1e22;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .thumbnail-hero-wrap {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      background: #060709;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .thumbnail-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .boxes-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .unblurred-tag {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      background: rgba(14, 16, 21, 0.92);
+      border: 1px solid rgba(255, 65, 65, 0.6);
+      border-radius: 3px;
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #ff8585;
+      padding: 2px 6px;
+      letter-spacing: 0.4px;
+    }
+
+    .hero-top-badges {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .reason-banner {
+      padding: 9px 12px;
+      background: linear-gradient(to bottom, #241315 0%, #1a1012 100%);
+      border-top: 1px solid #4a191c;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .reason-sub {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .reason-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 2. Timer Well */
+    .well-timer {
+      background-color: #111419;
+      border: 1px solid #282f3a;
+      border-radius: 4px;
+      padding: 8px 12px;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .timer-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+
+    .timer-clock {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f59e0b;
+      font-family: "Adwaita Mono", monospace;
+    }
+
+    /* Bootstrap 3 Progress Bar */
+    .progress {
+      height: 13px;
+      margin-bottom: 0;
+      overflow: hidden;
+      background-color: #0c0e12;
+      border-radius: 3px;
+      border: 1px solid #232a35;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    .progress-bar {
+      float: left;
+      width: 100%;
+      height: 100%;
+      font-size: 9px;
+      line-height: 13px;
+      color: #fff;
+      text-align: center;
+      transition: width 0.1s linear;
+    }
+
+    .progress-bar-danger {
+      background-color: #ff4141;
+      background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.15) 75%,
+        transparent 75%,
+        transparent
+      );
+      background-size: 30px 30px;
+    }
+
+    .progress.active .progress-bar {
+      animation: progress-bar-stripes 2s linear infinite;
+    }
+
+    @keyframes progress-bar-stripes {
+      from { background-position: 30px 0; }
+      to { background-position: 0 0; }
+    }
+
+    /* 3. Action Buttons */
+    .actions-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      outline: none;
+      text-align: center;
+      white-space: nowrap;
+      transition: all 0.1s ease-in-out;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+    }
+
+    .btn kbd {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-size: 10.5px;
+      font-family: inherit;
+    }
+
+    .btn-danger {
+      color: #ffffff;
+      background: linear-gradient(to bottom, #ff4d4d 0%, #d92424 100%);
+      border-color: #b01b1b;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: linear-gradient(to bottom, #ff5f5f 0%, #e62828 100%);
+      border-color: #c92222;
+    }
+
+    .btn-danger:active {
+      background: #c92222;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-default {
+      color: #d1d5db;
+      background: linear-gradient(to bottom, #2b323e 0%, #1d222b 100%);
+      border-color: #384252;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-default:hover {
+      color: #ffffff;
+      background: linear-gradient(to bottom, #343c4a 0%, #232934 100%);
+      border-color: #455266;
+    }
+
+    .btn-default:active {
+      background: #1d222b;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="panel panel-danger hud-panel">
+    <div class="panel-heading" data-tauri-drag-region>
+      <div class="panel-title-wrap">
+        <span class="pulsing-radar-dot"></span>
+        <h3 class="panel-title">ПРЕВЕНТИВНЫЙ ЩИТ • СТРИМЕР</h3>
+      </div>
+      <div class="hud-header-actions">
+        <span class="badge" id="hud-player-tag">ALLOHA</span>
+        <button type="button" class="btn btn-default btn-xs" id="hud-detach-btn" style="padding: 1px 5px; font-size: 9.5px; display: inline-flex; align-items: center; gap: 3px; background: #1c2027; border: 1px solid #3c1e22; color: #ff8585; cursor: pointer;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+          <span data-i18n="lookahead_btn_popout">В отдельное окно</span>
+        </button>
+        <button type="button" class="close" id="hud-close-btn" aria-label="Закрыть">&times;</button>
+      </div>
+    </div>
+
+    <div class="panel-body">
+      <!-- 1. Top Section: Prominent Preview Hero with Reason Banner -->
+      <div class="preview-hero-card">
+        <div class="thumbnail-hero-wrap">
+          <img id="hud-img" class="thumbnail-img" src="" alt="Кадр без блюра">
+          <canvas id="hud-canvas" class="boxes-canvas"></canvas>
+          <div class="unblurred-tag">ПРЕДПРОСМОТР БЕЗ БЛЮРА (ТОЛЬКО ДЛЯ СТРИМЕРА)</div>
+          <div class="hero-top-badges">
+            <span class="label label-danger" id="hud-severity-badge">ОЧЕВИДНЫЙ NSFW</span>
+            <span class="badge badge-score" id="hud-score-label">89%</span>
+          </div>
+        </div>
+
+        <div class="reason-banner">
+          <div class="reason-sub">ОБНАРУЖЕННЫЙ КОНТЕНТ / ПРИЧИНА:</div>
+          <div class="reason-title" id="hud-reason-title">Открытая женская грудь (Тест)</div>
+        </div>
+      </div>
+
+      <!-- 2. Countdown Timer Well -->
+      <div class="well-timer">
+        <div class="timer-meta-row">
+          <span>ВРЕМЯ ДО ПОКАЗА ЗРИТЕЛЯМ:</span>
+          <span class="timer-clock" id="hud-eta-clock">08.4 сек</span>
+        </div>
+        <div class="progress progress-striped active">
+          <div class="progress-bar progress-bar-danger" id="hud-progress-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- 3. Action Buttons -->
+      <div class="actions-row">
+        <button type="button" class="btn btn-danger" id="hud-btn-block">
+          <kbd>F9</kbd> БЛОКИРОВАТЬ В OBS
+        </button>
+        <button type="button" class="btn btn-default" id="hud-btn-allow">
+          <kbd>F8</kbd> ПРОПУСТИТЬ (БЕЗОПАСНО)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTicket = null;
+    let countdownInterval = null;
+    let ws = null;
+
+    const hudImg = document.getElementById("hud-img");
+    const hudCanvas = document.getElementById("hud-canvas");
+    const hudPlayerTag = document.getElementById("hud-player-tag");
+    const hudSeverityBadge = document.getElementById("hud-severity-badge");
+    const hudScoreLabel = document.getElementById("hud-score-label");
+    const hudReasonTitle = document.getElementById("hud-reason-title");
+    const hudEtaClock = document.getElementById("hud-eta-clock");
+    const hudProgressFill = document.getElementById("hud-progress-fill");
+    const hudBtnBlock = document.getElementById("hud-btn-block");
+    const hudBtnAllow = document.getElementById("hud-btn-allow");
+    const hudCloseBtn = document.getElementById("hud-close-btn");
+
+    const alertAudio = new Audio("universfield-warning-alert-132471.mp3");
+    alertAudio.volume = 0.8;
+
+    function playChime() {
+      try {
+        alertAudio.currentTime = 0;
+        const p = alertAudio.play();
+        if (p !== undefined) {
+          p.catch(() => playChimeFallback());
+        }
+      } catch (e) {
+        playChimeFallback();
+      }
+    }
+
+    function playChimeFallback() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = "sine";
+        osc1.frequency.setValueAtTime(587.33, now);
+        osc1.frequency.exponentialRampToValueAtTime(880.0, now + 0.15);
+        gain1.gain.setValueAtTime(0.28, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = "sine";
+        osc2.frequency.setValueAtTime(880.0, now + 0.18);
+        osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.38);
+        gain2.gain.setValueAtTime(0.22, now + 0.18);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.18);
+        osc2.stop(now + 0.55);
+      } catch (e) {}
+    }
+
+    function drawBoxes(boxes) {
+      if (!hudCanvas) return;
+      const rect = hudCanvas.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        hudCanvas.width = rect.width;
+        hudCanvas.height = rect.height;
+      }
+      const ctx = hudCanvas.getContext("2d");
+      ctx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
+      if (!boxes || !Array.isArray(boxes)) return;
+
+      const w = hudCanvas.width;
+      const h = hudCanvas.height;
+
+      boxes.forEach(b => {
+        const x1 = (b.x1 !== undefined ? b.x1 : (b.x || 0)) * w;
+        const y1 = (b.y1 !== undefined ? b.y1 : (b.y || 0)) * h;
+        const bw = (b.x2 !== undefined ? (b.x2 - b.x1) : (b.width || 0.2)) * w;
+        const bh = (b.y2 !== undefined ? (b.y2 - b.y1) : (b.height || 0.2)) * h;
+
+        ctx.save();
+        ctx.strokeStyle = "#ff2e4d";
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = "rgba(255, 30, 50, 0.9)";
+        ctx.shadowBlur = 6;
+        ctx.strokeRect(x1, y1, bw, bh);
+
+        ctx.fillStyle = "rgba(255, 40, 60, 0.24)";
+        ctx.fillRect(x1, y1, bw, bh);
+        ctx.restore();
+      });
+    }
+
+    function renderTicket(ticket) {
+      if (!ticket) return;
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+      currentTicket = ticket;
+      playChime();
+
+      hudPlayerTag.textContent = ticket.player_type || "ПЛЕЕР";
+
+      const isCue = (ticket.ticket_id && ticket.ticket_id.startsWith("cue-")) ||
+                    (ticket.severity && (ticket.severity.includes("ПЛАНИРУЕМ") || ticket.severity.includes("ТАЙМИНГ")));
+
+      if (isCue) {
+        hudSeverityBadge.className = "label label-info";
+        hudSeverityBadge.textContent = "ТАЙМИНГ ПЛЕЕРА";
+        hudScoreLabel.textContent = "ПЛАН (100%)";
+      } else if ((ticket.severity === "high") || (ticket.score >= 0.70)) {
+        hudSeverityBadge.className = "label label-danger";
+        hudSeverityBadge.textContent = "ОЧЕВИДНЫЙ NSFW";
+        hudScoreLabel.textContent = Math.round((ticket.score || 0.8) * 100) + "%";
+      } else {
+        hudSeverityBadge.className = "label label-warning";
+        hudSeverityBadge.textContent = "ПОДОЗРИТЕЛЬНЫЙ";
+        hudScoreLabel.textContent = Math.round((ticket.score || 0.8) * 100) + "%";
+      }
+
+      hudReasonTitle.textContent = ticket.reason || "Непристойный контент";
+
+      if (ticket.raw_image_base64 && ticket.raw_image_base64.length > 50) {
+        const prefix = ticket.raw_image_base64.startsWith("data:") ? "" : "data:image/jpeg;base64,";
+        hudImg.src = prefix + ticket.raw_image_base64;
+      } else {
+        hudImg.src = "logo.png";
+      }
+
+      hudImg.onload = () => {
+        if (ticket && ticket.boxes) {
+          drawBoxes(ticket.boxes);
+        }
+      };
+      drawBoxes(ticket.boxes);
+
+      const initialEta = Math.max(ticket.eta_seconds || 8.0, 1.0);
+      const targetTimeMs = ticket.execute_at_ms || (Date.now() + initialEta * 1000);
+
+      function updateCountdown() {
+        const remainingMs = targetTimeMs - Date.now();
+        const remSec = Math.max(0, remainingMs / 1000);
+
+        hudEtaClock.textContent = (remSec < 10 ? "0" : "") + remSec.toFixed(1) + " сек";
+        const pct = Math.min(100, Math.max(0, (remSec / initialEta) * 100));
+        hudProgressFill.style.width = pct + "%";
+
+        if (remSec <= 0) {
+          if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+          }
+          closeHudWindow();
+        }
+      }
+
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 100);
+    }
+
+    function sendDecision(action) {
+      if (!currentTicket) {
+        closeHudWindow();
+        return;
+      }
+      const ticketId = currentTicket.ticket_id;
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: "lookahead_action",
+          ticket_id: ticketId,
+          action: action
+        }));
+      }
+
+      closeHudWindow();
+    }
+
+    function closeHudWindow() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+      currentTicket = null;
+
+      try {
+        if (window.__TAURI__ && window.__TAURI__.window) {
+          window.__TAURI__.window.getCurrentWindow().hide();
+        }
+      } catch (e) {}
+
+      try {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "hide_hud" }));
+        }
+      } catch (e) {}
+    }
+
+    const hudDetachBtn = document.getElementById("hud-detach-btn");
+    if (hudDetachBtn) {
+      hudDetachBtn.addEventListener("click", () => {
+        try {
+          if (window.__TAURI__ && window.__TAURI__.core) {
+            window.__TAURI__.core.invoke("show_lookahead_preview").catch(() => {});
+          } else if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "open_lookahead_preview" }));
+          }
+        } catch (e) {}
+      });
+    }
+
+    function connectWs() {
+      try {
+        ws = new WebSocket("ws://127.0.0.1:51789");
+        ws.onopen = () => {
+          ws.send(JSON.stringify({ type: "register", client: "hud" }));
+        };
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "lookahead_ticket") {
+              renderTicket(data.ticket);
+            } else if (data.type === "lookahead_ticket_resolved" || data.type === "lookahead_cue_executed") {
+              if (currentTicket && currentTicket.ticket_id === data.ticket_id) {
+                closeHudWindow();
+              }
+            }
+          } catch (err) {}
+        };
+        ws.onclose = () => {
+          setTimeout(connectWs, 2000);
+        };
+      } catch (e) {
+        setTimeout(connectWs, 2000);
+      }
+    }
+
+    connectWs();
+
+    if (window.__TAURI__ && window.__TAURI__.event) {
+      window.__TAURI__.event.listen("lookahead_ticket", (evt) => {
+        renderTicket(evt.payload);
+      });
+    }
+
+    // Multi-key Hotkeys Engine for Lookahead HUD
+    let currentHotkeyPanic = "F9";
+    let currentHotkeyThreat = "F8";
+    try {
+      currentHotkeyPanic = localStorage.getItem("blewred_hotkey_panic") || "F9";
+      currentHotkeyThreat = localStorage.getItem("blewred_hotkey_threat") || "F8";
+    } catch (e) {}
+
+    function getKeyDisplayName(e) {
+      if (!e) return "F9";
+      const code = e.code || "";
+      const key = e.key || "";
+      if (code.startsWith("F") && code.length <= 3 && !isNaN(parseInt(code.slice(1)))) return code.toUpperCase();
+      if (key.startsWith("F") && key.length <= 3 && !isNaN(parseInt(key.slice(1)))) return key.toUpperCase();
+      if (code.startsWith("Key") && code.length === 4) return code.slice(3).toUpperCase();
+      if (code.startsWith("Digit") && code.length === 6) return code.slice(5);
+      if (code.startsWith("Numpad") && !isNaN(parseInt(code.slice(6)))) return code.slice(6);
+      switch (code) {
+        case "Space": return "SPACE";
+        case "Tab": return "TAB";
+        case "Enter": return "ENTER";
+        case "Escape": return "ESC";
+        case "Backspace": return "BACKSPACE";
+        case "Delete": return "DELETE";
+        case "Insert": return "INSERT";
+        case "Home": return "HOME";
+        case "End": return "END";
+        case "PageUp": return "PAGEUP";
+        case "PageDown": return "PAGEDOWN";
+        case "Pause": return "PAUSE";
+        case "ArrowUp": return "UP";
+        case "ArrowDown": return "DOWN";
+        case "ArrowLeft": return "LEFT";
+        case "ArrowRight": return "RIGHT";
+      }
+      if (key === " ") return "SPACE";
+      return key.toUpperCase();
+    }
+
+    function parseHotkeyCombo(combo) {
+      const res = { ctrl: false, alt: false, shift: false, meta: false, key: "F9" };
+      if (!combo) return res;
+      const parts = String(combo).replace(/-/g, "+").split("+").map(s => s.trim()).filter(Boolean);
+      if (parts.length === 0) return res;
+
+      if (parts.length === 1) {
+        const single = parts[0];
+        const upper = single.toUpperCase();
+        if (upper === "LEFT CTRL" || upper === "LCTRL" || upper === "CONTROLLEFT") {
+          res.ctrl = true;
+          res.key = "Left Ctrl";
+        } else if (upper === "RIGHT CTRL" || upper === "RCTRL" || upper === "CONTROLRIGHT") {
+          res.ctrl = true;
+          res.key = "Right Ctrl";
+        } else if (upper === "CTRL" || upper === "CONTROL") {
+          res.ctrl = true;
+          res.key = "Ctrl";
+        } else if (upper === "LEFT SHIFT" || upper === "LSHIFT" || upper === "SHIFTLEFT") {
+          res.shift = true;
+          res.key = "Left Shift";
+        } else if (upper === "RIGHT SHIFT" || upper === "RSHIFT" || upper === "SHIFTRIGHT") {
+          res.shift = true;
+          res.key = "Right Shift";
+        } else if (upper === "SHIFT") {
+          res.shift = true;
+          res.key = "Shift";
+        } else if (upper === "LEFT ALT" || upper === "LALT" || upper === "ALTLEFT") {
+          res.alt = true;
+          res.key = "Left Alt";
+        } else if (upper === "RIGHT ALT" || upper === "RALT" || upper === "ALTRIGHT") {
+          res.alt = true;
+          res.key = "Right Alt";
+        } else if (upper === "ALT") {
+          res.alt = true;
+          res.key = "Alt";
+        } else {
+          res.key = upper === "FN" ? "F9" : single;
+        }
+        return res;
+      }
+
+      let baseKey = "";
+      for (const part of parts) {
+        const p = part.toUpperCase();
+        if (p === "CTRL" || p === "CONTROL" || p === "LEFT CTRL" || p === "RIGHT CTRL" || p === "LCTRL" || p === "RCTRL") res.ctrl = true;
+        else if (p === "ALT" || p === "LEFT ALT" || p === "RIGHT ALT" || p === "LALT" || p === "RALT") res.alt = true;
+        else if (p === "SHIFT" || p === "LEFT SHIFT" || p === "RIGHT SHIFT" || p === "LSHIFT" || p === "RSHIFT") res.shift = true;
+        else if (p === "WIN" || p === "META" || p === "SUPER" || p === "OS") res.meta = true;
+        else {
+          baseKey = part.toUpperCase();
+          if (baseKey === "FN") baseKey = "F9";
+        }
+      }
+      res.key = baseKey || parts[parts.length - 1];
+      return res;
+    }
+
+    function renderHudComboBadge(combo) {
+      const parsed = parseHotkeyCombo(combo);
+      const parts = [];
+      if (parsed.ctrl && !parsed.key.toUpperCase().includes("CTRL")) parts.push("Ctrl");
+      if (parsed.alt && !parsed.key.toUpperCase().includes("ALT")) parts.push("Alt");
+      if (parsed.shift && !parsed.key.toUpperCase().includes("SHIFT")) parts.push("Shift");
+      if (parsed.meta && !parsed.key.toUpperCase().includes("WIN")) parts.push("Win");
+      parts.push(parsed.key || "F9");
+      return parts.map(p => `<kbd>${p}</kbd>`).join('+');
+    }
+
+    function matchesHotkey(e, targetCombo) {
+      if (!targetCombo) return false;
+      const parsed = parseHotkeyCombo(targetCombo);
+      const targetKeyUpper = (parsed.key || "").toUpperCase();
+
+      if (targetKeyUpper === "LEFT CTRL" || targetKeyUpper === "LCTRL" || targetKeyUpper === "CONTROLLEFT") return e.code === "ControlLeft";
+      if (targetKeyUpper === "RIGHT CTRL" || targetKeyUpper === "RCTRL" || targetKeyUpper === "CONTROLRIGHT") return e.code === "ControlRight";
+      if (targetKeyUpper === "CTRL" || targetKeyUpper === "CONTROL") return e.code === "ControlLeft" || e.code === "ControlRight" || e.key === "Control";
+      if (targetKeyUpper === "LEFT SHIFT" || targetKeyUpper === "SHIFTLEFT") return e.code === "ShiftLeft";
+      if (targetKeyUpper === "RIGHT SHIFT" || targetKeyUpper === "SHIFTRIGHT") return e.code === "ShiftRight";
+      if (targetKeyUpper === "SHIFT") return e.code === "ShiftLeft" || e.code === "ShiftRight" || e.key === "Shift";
+      if (targetKeyUpper === "LEFT ALT" || targetKeyUpper === "ALTLEFT") return e.code === "AltLeft";
+      if (targetKeyUpper === "RIGHT ALT" || targetKeyUpper === "ALTRIGHT") return e.code === "AltRight";
+      if (targetKeyUpper === "ALT") return e.code === "AltLeft" || e.code === "AltRight" || e.key === "Alt";
+
+      if (targetKeyUpper === "SHIFT" || targetKeyUpper === "LEFT SHIFT" || targetKeyUpper === "RIGHT SHIFT") {
+        if (parsed.ctrl && !e.ctrlKey) return false;
+        if (parsed.alt && !e.altKey) return false;
+        if (parsed.meta && !e.metaKey) return false;
+        return e.code.startsWith("Shift") || e.key === "Shift";
+      }
+      if (targetKeyUpper === "CTRL" || targetKeyUpper === "LEFT CTRL" || targetKeyUpper === "RIGHT CTRL") {
+        if (parsed.shift && !e.shiftKey) return false;
+        if (parsed.alt && !e.altKey) return false;
+        if (parsed.meta && !e.metaKey) return false;
+        return e.code.startsWith("Control") || e.key === "Control";
+      }
+      if (targetKeyUpper === "ALT" || targetKeyUpper === "LEFT ALT" || targetKeyUpper === "RIGHT ALT") {
+        if (parsed.ctrl && !e.ctrlKey) return false;
+        if (parsed.shift && !e.shiftKey) return false;
+        if (parsed.meta && !e.metaKey) return false;
+        return e.code.startsWith("Alt") || e.key === "Alt";
+      }
+
+      if (!!e.ctrlKey !== parsed.ctrl) return false;
+      if (!!e.altKey !== parsed.alt) return false;
+      if (!!e.shiftKey !== parsed.shift) return false;
+      if (!!e.metaKey !== parsed.meta) return false;
+
+      const pressedKey = getKeyDisplayName(e).toUpperCase();
+      return pressedKey === targetKeyUpper;
+    }
+
+    function updateHudActionButtons() {
+      let isEn = true;
+      try {
+        const savedLang = localStorage.getItem("blewred_lang");
+        isEn = savedLang ? (savedLang === "en") : true;
+      } catch (e) {}
+
+      if (hudBtnBlock) {
+        hudBtnBlock.innerHTML = `${renderHudComboBadge(currentHotkeyPanic)} ${isEn ? "BLOCK IN OBS" : "БЛОКИРОВАТЬ В OBS"}`;
+      }
+      if (hudBtnAllow) {
+        hudBtnAllow.innerHTML = `${renderHudComboBadge(currentHotkeyThreat)} ${isEn ? "ALLOW (SAFE)" : "ПРОПУСТИТЬ (БЕЗОПАСНО)"}`;
+      }
+    }
+
+    updateHudActionButtons();
+
+    window.addEventListener("resize", () => {
+      if (currentTicket && currentTicket.boxes) {
+        drawBoxes(currentTicket.boxes);
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (matchesHotkey(e, currentHotkeyPanic)) {
+        e.preventDefault();
+        sendDecision("block");
+      } else if (matchesHotkey(e, currentHotkeyThreat)) {
+        e.preventDefault();
+        sendDecision("allow");
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        closeHudWindow();
+      }
+    });
+
+    hudBtnBlock.addEventListener("click", () => sendDecision("block"));
+    hudBtnAllow.addEventListener("click", () => sendDecision("allow"));
+    hudCloseBtn.addEventListener("click", () => closeHudWindow());
+  </script>
+</body>
+</html>

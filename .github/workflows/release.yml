@@ -1,0 +1,105 @@
+name: Release Build & Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build & Package (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2.0" --locked
+
+      - name: Build Tauri App & NSIS Bundle
+        working-directory: src-tauri
+        run: cargo tauri build
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress
+
+      - name: Build Inno Setup Installer
+        run: iscc build/installer/setup.iss
+
+      - name: Prepare Release Artifacts Directory
+        id: prep
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF_NAME:-v0.5.0-alpha.1}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          mkdir -p release_artifacts/portable
+
+          # Copy compiled binary
+          cp src-tauri/target/release/blewred.exe release_artifacts/portable/
+
+          # Copy runtime UI & assets
+          cp -r ui release_artifacts/portable/
+          cp -r config release_artifacts/portable/
+          cp -r plugins release_artifacts/portable/
+          
+          # Prepare extensions
+          mkdir -p release_artifacts/portable/extensions
+          cp -r extensions/chrome release_artifacts/portable/extensions/
+
+          # Prepare models folder with instructions (without heavy .onnx models)
+          mkdir -p release_artifacts/portable/models
+          cp models/README.txt release_artifacts/portable/models/
+          cp models/.gitkeep release_artifacts/portable/models/
+
+          cp scripts/install_obs_plugin.bat release_artifacts/portable/
+          cp launch_browser_with_extension.bat release_artifacts/portable/
+          cp README.md release_artifacts/portable/
+          cp LICENSE release_artifacts/portable/
+
+          # Package Portable ZIP
+          cd release_artifacts/portable
+          7z a -tzip "../blewred-${VERSION}-portable.zip" *
+          cd ../..
+
+          # Package Standalone Browser Extension ZIP
+          cd extensions/chrome
+          7z a -tzip "../../release_artifacts/blewred-browser-extension-${VERSION}.zip" *
+          cd ../..
+
+          # Copy Tauri NSIS installer if generated
+          find src-tauri/target/release/bundle -name "*.exe" -exec cp {} release_artifacts/ \; || true
+
+          # Copy Inno Setup installer if generated
+          find build/dist -name "*.exe" -exec cp {} release_artifacts/ \; || true
+
+          # Generate SHA256 Checksums
+          cd release_artifacts
+          sha256sum *.* > SHA256SUMS.txt || true
+          cd ..
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: |
+            release_artifacts/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false

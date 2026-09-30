@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "blewred - Lookahead & Compliance Interceptor",
+  "author": "msbluesnow",
+  "homepage_url": "https://github.com/msbluesnow/blewred",
+  "version": "0.5.0",
+  "version_name": "0.5.0-alpha",
+  "description": "HTML5 video player timeline sync and lookahead cues for stream compliance (Alloha, Collaps, Kinobox, Rutube, VK Video, YouTube, Twitch).",
+  "permissions": [
+    "tabs",
+    "storage",
+    "declarativeNetRequest",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["page_interceptor.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["hls.min.js", "content.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["page_interceptor.js", "hls.min.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "blewred Lookahead Interceptor",
+    "default_icon": {
+      "32": "icons/icon-32.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "32": "icons/icon-32.png",
+    "128": "icons/icon-128.png"
+  }
+}

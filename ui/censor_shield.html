@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>blewred</title>
+  <link rel="icon" type="image/jpeg" href="blewred_dualver.jpg">
+  <style>
+    :root {
+      --blew-blue: #19aeff;
+      --blew-blue-dark: #0a84c8;
+      --blew-red: #ff4141;
+      --blew-red-dark: #c91818;
+      --shield-bg: #030406;
+      --shield-panel-bg: #0c0e13;
+      --shield-panel-border: #262b36;
+      --shield-inner-bg: #07080c;
+    }
+
+    @font-face {
+      font-family: "Adwaita Sans";
+      src: url("fonts/AdwaitaSans-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Sans";
+      src: url("fonts/AdwaitaSans-Italic.ttf") format("truetype");
+      font-weight: 400;
+      font-style: italic;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Mono";
+      src: url("fonts/AdwaitaMono-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Mono";
+      src: url("fonts/AdwaitaMono-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Adwaita Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body, html {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--shield-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+    }
+
+    /* Extremely dark monochrome carbon viewport */
+    .shield-viewport {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background-color: var(--shield-bg);
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(25, 174, 255, 0.03) 0%, transparent 60%),
+        linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+      background-size: 100% 100%, 28px 28px, 28px 28px;
+    }
+
+    /* Bootstrap 3 Panel with Monochrome Dark Border (slightly lighter than background) */
+    .panel {
+      width: 100%;
+      max-width: 740px;
+      background-color: var(--shield-panel-bg);
+      border: 1px solid var(--shield-panel-border);
+      border-radius: 4px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.95), 0 0 1px rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Signature dual-tone accent bar matching logo.svg (50% Electric Blue / 50% Flame Red) */
+    .panel-accent-bar {
+      height: 3px;
+      width: 100%;
+      background: linear-gradient(90deg, var(--blew-blue) 0%, var(--blew-blue) 50%, var(--blew-red) 50%, var(--blew-red) 100%);
+    }
+
+    /* Centered Header with SVG Logo and Status Badge */
+    .panel-header-centered {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px 18px 20px;
+      background: #0f1118;
+      border-bottom: 1px solid var(--shield-panel-border);
+      gap: 12px;
+    }
+
+    .brand-logo-svg {
+      height: 46px;
+      width: auto;
+      display: block;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-radius: 3px;
+      background: var(--shield-inner-bg);
+      border: 1px solid var(--shield-panel-border);
+      color: var(--blew-red);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+
+    .status-badge.safe {
+      color: var(--blew-blue);
+    }
+
+    .status-badge.scheduled {
+      color: #ffa726;
+      border-color: rgba(255, 167, 38, 0.4);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--blew-red);
+      box-shadow: 0 0 6px var(--blew-red);
+      animation: pulse-dot 1.4s ease-in-out infinite;
+    }
+
+    .status-badge.safe .status-dot {
+      background-color: var(--blew-blue);
+      box-shadow: 0 0 6px var(--blew-blue);
+    }
+
+    .status-badge.scheduled .status-dot {
+      background-color: #ffa726;
+      box-shadow: 0 0 6px #ffa726;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Panel Body */
+    .panel-body {
+      padding: 24px 28px;
+    }
+
+    /* Content Row: Large Target Name (Left) + Large Probability (Right) */
+    .censor-hero-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #171b24;
+    }
+
+    .censor-target-box {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .censor-caption {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--blew-blue);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .censor-target-name {
+      font-size: 28px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.15;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      word-break: break-word;
+    }
+
+    .censor-prob-box {
+      flex-shrink: 0;
+      text-align: right;
+    }
+
+    .censor-prob-caption {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--blew-red);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .censor-prob-value {
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--blew-red);
+      line-height: 1;
+      text-shadow: 0 0 16px rgba(255, 65, 65, 0.4);
+    }
+
+    .censor-prob-value.safe {
+      color: var(--blew-blue);
+      text-shadow: 0 0 16px rgba(25, 174, 255, 0.4);
+    }
+
+    .censor-prob-value.scheduled {
+      color: #ffa726;
+      text-shadow: 0 0 16px rgba(255, 167, 38, 0.4);
+    }
+
+    /* Bootstrap 3 Animated Progress Bar */
+    .progress {
+      overflow: hidden;
+      height: 28px;
+      margin-bottom: 0;
+      background-color: var(--shield-inner-bg);
+      border-radius: 4px;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+      border: 1px solid var(--shield-panel-border);
+    }
+
+    .progress-bar {
+      float: left;
+      width: 0%;
+      height: 100%;
+      font-size: 14px;
+      line-height: 28px;
+      color: #ffffff;
+      text-align: center;
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+      transition: width .4s ease;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      background-color: var(--blew-red);
+      background-image: linear-gradient(to bottom, #ff4141 0%, #c91818 100%);
+      background-repeat: repeat-x;
+    }
+
+    .progress-bar.safe {
+      background-color: var(--blew-blue);
+      background-image: linear-gradient(to bottom, #19aeff 0%, #0a84c8 100%);
+    }
+
+    .progress-bar.scheduled {
+      background-color: #f57c00;
+      background-image: linear-gradient(to bottom, #ffa726 0%, #e65100 100%);
+    }
+
+    /* Bootstrap 3 Striped Animation */
+    .progress-striped .progress-bar {
+      background-size: 40px 40px;
+      background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, .16) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, .16) 50%,
+        rgba(255, 255, 255, .16) 75%,
+        transparent 75%,
+        transparent
+      );
+    }
+
+    @keyframes progress-bar-stripes {
+      from { background-position: 40px 0; }
+      to { background-position: 0 0; }
+    }
+
+    .progress.active .progress-bar {
+      animation: progress-bar-stripes 1.5s linear infinite;
+    }
+
+    .censor-prob-value, .progress-bar, .status-badge {
+      font-family: "Adwaita Mono", monospace;
+    }
+
+    /* Screen-Bottom Docked Developer Support Bar (Hugs bottom screen edge, Bootstrap 3 style) */
+    .shield-docked-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100vw;
+      background: #080a0f;
+      border-top: 1px solid var(--shield-panel-border);
+      padding: 7px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.75);
+    }
+
+    .shield-docked-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 860px;
+    }
+
+    /* GitHub Header Box in authentic Bootstrap 3 panel-heading / input-group-addon style */
+    .shield-gh-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(180deg, #252a33 0%, #1c2027 100%);
+      border: 1px solid #2b313c;
+      border-radius: 3px;
+      padding: 3px 9px;
+      color: #e2e8f0;
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      font-size: 11px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .shield-gh-header:hover {
+      background: linear-gradient(180deg, #2d333e 0%, #222730 100%);
+      border-color: #3b4352;
+      color: #ffffff;
+    }
+
+    .gh-svg {
+      display: block;
+      color: #cbd5e1;
+    }
+
+    /* Single monochrome folded hand icon centered on the top line of the footer by its center */
+    .shield-topline-crest {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 38px;
+      height: 38px;
+      background: #090b10;
+      border: 1px solid var(--shield-panel-border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      z-index: 1001;
+      pointer-events: none;
+    }
+
+    .hands-mono-icon {
+      font-size: 24px;
+      line-height: 1;
+      filter: grayscale(100%) brightness(1.3) contrast(1.1);
+      display: inline-block;
+      user-select: none;
+    }
+
+    /* Support Link in Bootstrap button-pill style */
+    .shield-support-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      font-size: 11px;
+      font-family: "Adwaita Mono", monospace;
+      background: rgba(25, 174, 255, 0.12);
+      border: 1px solid rgba(25, 174, 255, 0.35);
+      padding: 3px 12px;
+      border-radius: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .shield-support-link:hover {
+      background: rgba(25, 174, 255, 0.25);
+      border-color: var(--blew-blue);
+      color: #ffffff;
+    }
+  </style>
+  <script src="i18n.js"></script>
+</head>
+<body>
+  <div class="shield-viewport" id="shield-viewport">
+    <div class="panel" id="shield-panel">
+      <!-- Dual-tone accent matching logo.svg (Electric Blue / Flame Red) -->
+      <div class="panel-accent-bar"></div>
+
+      <!-- Header: Centered SVG Logo + Status Pill -->
+      <div class="panel-header-centered">
+        <img src="logo.svg" alt="blewred" class="brand-logo-svg">
+        <div class="status-badge" id="status-badge">
+          <span class="status-dot"></span>
+          <span id="badge-text" data-i18n="shield_badge_censor_active">CENSOR ACTIVE</span>
+        </div>
+      </div>
+
+      <!-- Body: Large Content Name (Left) + Large Probability (Right) + Minimal Animated Bar -->
+      <div class="panel-body">
+        <div class="censor-hero-row">
+          <div class="censor-target-box">
+            <div class="censor-caption" id="shield-caption" data-i18n="shield_caption_detected">ЗАФИКСИРОВАННЫЙ КОНТЕНТ</div>
+            <div class="censor-target-name" id="shield-target-name" data-i18n="shield_target_nsfw">НЕДОПУСТИМЫЙ КОНТЕНТ (NSFW)</div>
+          </div>
+          <div class="censor-prob-box">
+            <div class="censor-prob-caption" id="shield-prob-caption" data-i18n="shield_prob_caption_text">ВЕРОЯТНОСТЬ</div>
+            <div class="censor-prob-value" id="shield-prob-value">94%</div>
+          </div>
+        </div>
+
+        <div class="progress progress-striped active">
+          <div class="progress-bar" id="shield-progress-bar" style="width: 94%;">
+            <span id="shield-bar-text">94%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fixed Screen-Bottom Docked Developer Support Bar (Hugs bottom of screen, Zero tooltips) -->
+  <div class="shield-docked-footer" id="shield-donate-box">
+    <!-- Single Folded Hands Monochrome Icon centered on top line of footer by its center (2x size) -->
+    <div class="shield-topline-crest">
+      <span class="hands-mono-icon">🙏</span>
+    </div>
+
+    <div class="shield-docked-inner">
+      <!-- Delimited GitHub Header / Badge in Bootstrap 3 style -->
+      <a class="shield-gh-header" href="https://github.com/msbluesnow/blewred" target="_blank" rel="noopener noreferrer">
+        <svg class="gh-svg" viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        <span>GITHUB</span>
+      </a>
+
+      <!-- Support / Donation Link without QR-code -->
+      <a class="shield-support-link" href="https://web.tribute.tg/e/1dW" target="_blank" rel="noopener noreferrer">
+        <span data-i18n="shield_donate_support">ПОДДЕРЖКА РАЗРАБОТКИ</span>: web.tribute.tg/e/1dW
+      </a>
+    </div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script>
+    const WS_URL = "ws://127.0.0.1:51789";
+
+    // Initialize localization from query param or stored preference
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const langParam = urlParams.get("lang");
+      if (langParam && window.I18N) {
+        window.I18N.setLanguage(langParam);
+      } else if (window.I18N) {
+        window.I18N.applyToDOM();
+      }
+    } catch(e) {}
+    const statusBadge = document.getElementById("status-badge");
+    const badgeText = document.getElementById("badge-text");
+    const captionText = document.getElementById("shield-caption");
+    const targetName = document.getElementById("shield-target-name");
+    const probCaption = document.getElementById("shield-prob-caption");
+    const probValue = document.getElementById("shield-prob-value");
+    const progressBar = document.getElementById("shield-progress-bar");
+    const barText = document.getElementById("shield-bar-text");
+    const donateBox = document.getElementById("shield-donate-box");
+
+    function setDonateVisible(visible) {
+      if (donateBox) {
+        donateBox.style.display = visible ? "flex" : "none";
+      }
+    }
+
+    // Default to visible, check localStorage and URL parameters
+    try {
+      const saved = localStorage.getItem("blewred_shield_donate");
+      if (saved === "false") {
+        setDonateVisible(false);
+      } else if (saved === "true") {
+        setDonateVisible(true);
+      }
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("donate") === "0") {
+        setDonateVisible(false);
+      }
+    } catch(e) {}
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === "blewred_shield_donate") {
+        setDonateVisible(e.newValue !== "false");
+      }
+    });
+
+    function parseProbability(reason, fallbackScore) {
+      if (typeof fallbackScore === "number" && fallbackScore > 0) {
+        return Math.min(100, Math.max(1, Math.round(fallbackScore <= 1 ? fallbackScore * 100 : fallbackScore)));
+      }
+      if (!reason) return 95;
+      const match = reason.match(/(\d{1,3}(?:\.\d+)?)\s*%/);
+      if (match) {
+        return Math.min(100, Math.max(1, Math.round(parseFloat(match[1]))));
+      }
+      return 95;
+    }
+
+    let lastShieldState = null;
+
+    function isEnglish() {
+      return !!(window.I18N && window.I18N.getLanguage() === "en");
+    }
+
+    function cleanReasonString(reason) {
+      if (!reason) return "";
+      let clean = String(reason)
+        .replace(/CASCADE:\s*Localized anatomical markers\s*\(/gi, "")
+        .replace(/CASCADE:\s*Scene content qualified as\s*\(/gi, "")
+        .replace(/КАСКАД:\s*Локализованы анатомические маркеры\s*\(/gi, "")
+        .replace(/КАСКАД:\s*Общий контент сцены квалифицирован как\s*\(/gi, "")
+        .replace(/Detected:\s*/gi, "")
+        .replace(/Обнаружено:\s*/gi, "")
+        .replace(/Stream protection active\.?/gi, "")
+        .replace(/Защита потока активна\.?/gi, "")
+        .replace(/\s*\(?\d{1,3}(?:\.\d+)?%\)?/g, "")
+        .replace(/\s*\([Ff]\d+\)/g, "")
+        .trim();
+
+      while (clean.startsWith("(") && clean.endsWith(")")) {
+        clean = clean.slice(1, -1).trim();
+      }
+      clean = clean.replace(/^[(\s]+|[)\s]+$/g, "").trim();
+      return clean;
+    }
+
+    function formatBlockedTarget(reason) {
+      const en = isEnglish();
+      if (!reason) return en ? "UNACCEPTABLE CONTENT (NSFW)" : "НЕДОПУСТИМЫЙ КОНТЕНТ (NSFW)";
+      let clean = cleanReasonString(reason);
+      if (!clean) return en ? "UNACCEPTABLE CONTENT (NSFW)" : "НЕДОПУСТИМЫЙ КОНТЕНТ (NSFW)";
+
+      const norm = clean.toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ");
+
+      if (norm.includes("female breast") || norm.includes("грудь") || norm.includes("декольте")) {
+        if (norm.includes("covered") || norm.includes("закрыт")) {
+          return en ? "FEMALE BREAST (COVERED)" : "ЖЕНСКАЯ ГРУДЬ (ЗАКРЫТАЯ)";
+        }
+        return en ? "EXPOSED FEMALE BREAST" : "ОБНАЖЕННАЯ ЖЕНСКАЯ ГРУДЬ";
+      }
+
+      if (norm.includes("female genitalia") || norm.includes("женские гениталии") || norm.includes("вульва")) {
+        if (norm.includes("covered") || norm.includes("закрыт")) {
+          return en ? "FEMALE GENITALIA (COVERED)" : "ЖЕНСКИЕ ГЕНИТАЛИИ (БЕЛЬЕ)";
+        }
+        return en ? "EXPOSED FEMALE GENITALIA" : "ОТКРЫТЫЕ ЖЕНСКИЕ ГЕНИТАЛИИ";
+      }
+      if (norm.includes("male genitalia") || norm.includes("мужские гениталии") || norm.includes("пенис")) {
+        return en ? "EXPOSED MALE GENITALIA" : "ОТКРЫТЫЕ МУЖСКИЕ ГЕНИТАЛИИ";
+      }
+      if (norm.includes("genitalia") || norm.includes("гениталии")) {
+        return en ? "EXPOSED GENITALIA" : "ОТКРЫТЫЕ ГЕНИТАЛИИ";
+      }
+
+      if (norm.includes("anus") || norm.includes("анус") || norm.includes("аноректальн")) {
+        return en ? "EXPOSED ANUS / ANORECTAL" : "ОБНАЖЕННЫЙ АНУС / АНОРЕКТАЛЬНАЯ ЗОНА";
+      }
+      if (norm.includes("buttocks") || norm.includes("ягодицы")) {
+        if (norm.includes("covered") || norm.includes("закрыт")) {
+          return en ? "BUTTOCKS (COVERED)" : "ЯГОДИЦЫ (БЕЛЬЕ / КУПАЛЬНИК)";
+        }
+        return en ? "EXPOSED BUTTOCKS" : "ОБНАЖЕННЫЕ ЯГОДИЦЫ";
+      }
+
+      if (norm.includes("male breast") || norm.includes("торс") || norm.includes("torso") || norm.includes("chest")) {
+        return en ? "BARE TORSO" : "ОБНАЖЕННЫЙ ТОРС";
+      }
+      if (norm.includes("belly") || norm.includes("живот") || norm.includes("abdomen")) {
+        return en ? "EXPOSED ABDOMEN" : "ОБНАЖЕННЫЙ ЖИВОТ";
+      }
+
+      if (norm.includes("underwear") || norm.includes("белье") || norm.includes("бель") || norm.includes("купальник") || norm.includes("бикини") || norm.includes("стринг") || norm.includes("swimwear")) {
+        return en ? "UNDERWEAR / SWIMWEAR" : "НИЖНЕЕ БЕЛЬЕ / КУПАЛЬНИК";
+      }
+
+      if (norm.includes("хентай") || norm.includes("аниме") || norm.includes("hentai") || norm.includes("anime")) {
+        return en ? "HENTAI / ANIME NSFW" : "ХЕНТАЙ / АНИМЕ NSFW";
+      }
+
+      if (norm.includes("эротика") || norm.includes("секси") || norm.includes("erotic") || norm.includes("sexy") || norm.includes("suggestive")) {
+        return en ? "EROTICA / SUGGESTIVE" : "ЭРОТИКА / SUGGESTIVE";
+      }
+      if (norm.includes("body exposed") || norm.includes("порнография") || norm.includes("porn") || norm.includes("nsfw content")) {
+        return en ? "FULL SCENE: NSFW" : "ОБЩИЙ ПЛАН: СЦЕНАРНЫЙ NSFW";
+      }
+
+      if (norm.includes("ocr") || norm.includes("стоп-слово") || norm.includes("stopword") || norm.includes("banned")) {
+        return en ? "PROHIBITED STOPWORD ON SCREEN" : "ЗАПРЕЩЕННОЕ СТОП-СЛОВО В КАДРЕ";
+      }
+
+      if (norm.includes("ручная") || norm.includes("panic") || norm.includes("emergency") || norm.includes("f9")) {
+        return en ? "EMERGENCY BLOCK" : "ЭКСТРЕННАЯ БЛОКИРОВКА";
+      }
+      if (norm.includes("lookahead")) {
+        return en ? "PREEMPTIVE BLOCK (LOOKAHEAD)" : "ПРЕВЕНТИВНАЯ БЛОКИРОВКА (LOOKAHEAD)";
+      }
+      if (norm.includes("тайминг") || norm.includes("планов") || norm.includes("timing") || norm.includes("cue")) {
+        return en ? "SCHEDULED TIMING" : "ЗАПЛАНИРОВАННЫЙ ТАЙМИНГ";
+      }
+      if (norm.includes("симуляция") || norm.includes("тест") || norm.includes("simulation")) {
+        return en ? "NSFW SIMULATION TEST" : "ТЕСТ СИМУЛЯЦИИ NSFW";
+      }
+      if (norm.includes("подозрительный") || norm.includes("suspicious")) {
+        return en ? "SUSPICIOUS CONTENT" : "ПОДОЗРИТЕЛЬНЫЙ КОНТЕНТ";
+      }
+
+      return clean.replace(/\s*\(?\d{1,3}(?:\.\d+)?%\)?/g, "").replace(/^[(\s]+|[)\s]+$/g, "").trim().toUpperCase();
+    }
+
+    let currentScheduledCue = null;
+    let cueTimer = null;
+
+    function setScheduledCueState(data) {
+      if (!data) return;
+      const rem = typeof data.remaining_sec === "number" 
+        ? data.remaining_sec 
+        : parseFloat(data.remaining_sec) || 0;
+      const total = typeof data.total_sec === "number" 
+        ? data.total_sec 
+        : (typeof data.total_duration_sec === "number" ? data.total_duration_sec : parseFloat(data.total_sec || data.total_duration_sec) || 0);
+
+      let defaultCue = isEnglish() ? "Scheduled Block" : "Запланированная блокировка";
+      let cueReason = (data.reason || defaultCue).trim();
+      if (!cueReason || cueReason === "Активная блокировка" || cueReason === "Active Block") {
+        cueReason = data.range ? `${isEnglish() ? "TIMING" : "ТАЙМИНГ"} ${data.range}` : defaultCue;
+      }
+
+      currentScheduledCue = {
+        cue_id: data.cue_id || "",
+        reason: cueReason,
+        range: data.range || "",
+        remaining_sec: rem,
+        total_sec: total > 0 ? total : rem,
+        last_update_ts: performance.now(),
+        is_playing: data.is_playing !== false
+      };
+
+      renderScheduledCue();
+
+      if (!cueTimer) {
+        cueTimer = setInterval(tickScheduledCue, 100);
+      }
+    }
+
+    function clearScheduledCueState() {
+      currentScheduledCue = null;
+      if (cueTimer) {
+        clearInterval(cueTimer);
+        cueTimer = null;
+      }
+    }
+
+    function tickScheduledCue() {
+      if (!currentScheduledCue) {
+        if (cueTimer) {
+          clearInterval(cueTimer);
+          cueTimer = null;
+        }
+        return;
+      }
+      renderScheduledCue();
+    }
+
+    function renderScheduledCue() {
+      if (!currentScheduledCue) return;
+      const en = isEnglish();
+
+      let remSec = currentScheduledCue.remaining_sec;
+      if (currentScheduledCue.is_playing && currentScheduledCue.last_update_ts) {
+        const elapsed = (performance.now() - currentScheduledCue.last_update_ts) / 1000;
+        remSec = Math.max(0, remSec - elapsed);
+      }
+
+      const displaySec = Math.max(0, Math.ceil(remSec));
+
+      statusBadge.className = "status-badge scheduled";
+      badgeText.innerText = en ? "PLAYER CUE TIMING" : "ТАЙМИНГ ПЛЕЕРА";
+      captionText.innerText = en ? "SCHEDULED CENSOR BLOCK" : "ЗАПЛАНИРОВАННАЯ БЛОКИРОВКА";
+
+      const rawReason = (currentScheduledCue.reason || (en ? "Scheduled Block" : "Запланированная блокировка")).trim();
+      const rawRange = (currentScheduledCue.range || "").trim();
+
+      if (rawReason && rawRange && !rawReason.includes(rawRange)) {
+        targetName.innerText = `${rawReason.toUpperCase()} • ${rawRange}`;
+      } else if (rawReason) {
+        targetName.innerText = rawReason.toUpperCase();
+      } else if (rawRange) {
+        targetName.innerText = `${en ? "TIMING" : "ТАЙМИНГ"} ${rawRange}`;
+      } else {
+        targetName.innerText = en ? "SCHEDULED TIMING" : "ЗАПЛАНИРОВАННЫЙ ТАЙМИНГ";
+      }
+
+      probCaption.innerText = en ? "COUNTDOWN" : "ДО ОКОНЧАНИЯ";
+      probCaption.style.color = "#ffa726";
+
+      probValue.className = "censor-prob-value scheduled";
+      probValue.innerText = `${displaySec} ${en ? "sec" : "сек"}`;
+
+      let pct = 100;
+      if (currentScheduledCue.total_sec > 0) {
+        const passed = currentScheduledCue.total_sec - remSec;
+        pct = Math.min(100, Math.max(0, Math.round((passed / currentScheduledCue.total_sec) * 100)));
+      }
+
+      progressBar.className = "progress-bar scheduled";
+      progressBar.style.width = `${pct}%`;
+      barText.innerText = `${en ? "AUTO-RESUME IN" : "ОСТАЛОСЬ:"} ${displaySec} ${en ? "SEC" : "СЕК"}`;
+    }
+
+    function setShieldState(isNsfw, reason, score) {
+      lastShieldState = { isNsfw, reason, score };
+      if (!isNsfw) {
+        clearScheduledCueState();
+      }
+      const prob = parseProbability(reason, score);
+      const en = isEnglish();
+      let cleanReason = reason || (en ? "Neural Cascade Analysis" : "Анализ каскада нейросетей");
+      if (cleanReason === "Активная блокировка" || cleanReason === "ПОТОК БЕЗОПАСЕН" || cleanReason === "STREAM SAFE") {
+        cleanReason = en ? "UNACCEPTABLE CONTENT (NSFW)" : "НЕДОПУСТИМЫЙ КОНТЕНТ (NSFW)";
+      }
+
+      if (isNsfw) {
+        statusBadge.className = "status-badge";
+        badgeText.innerText = en ? "CENSOR ACTIVE" : "ЦЕНЗУРА АКТИВНА";
+        captionText.innerText = en ? "DETECTED VIOLATION" : "ЗАФИКСИРОВАННЫЙ КОНТЕНТ";
+        const formattedTarget = formatBlockedTarget(cleanReason);
+        targetName.innerText = formattedTarget;
+
+        const isEmergency = formattedTarget === "EMERGENCY BLOCK" || formattedTarget === "ЭКСТРЕННАЯ БЛОКИРОВКА"
+          || (cleanReason && (cleanReason.toLowerCase().includes("emergency") || cleanReason.toLowerCase().includes("экстренная") || cleanReason.toLowerCase().includes("ручная") || cleanReason.toLowerCase().includes("panic") || cleanReason.toLowerCase().includes("f9")));
+
+        probCaption.innerText = en ? "PROBABILITY" : "ВЕРОЯТНОСТЬ";
+        probCaption.style.color = "var(--blew-red)";
+        probValue.className = "censor-prob-value";
+
+        if (isEmergency) {
+          probValue.innerText = "XXX";
+          progressBar.className = "progress-bar";
+          progressBar.style.width = "100%";
+          barText.innerText = "XXX";
+        } else {
+          probValue.innerText = `${prob}%`;
+          progressBar.className = "progress-bar";
+          progressBar.style.width = `${prob}%`;
+          barText.innerText = `${prob}%`;
+        }
+      } else {
+        statusBadge.className = "status-badge safe";
+        badgeText.innerText = en ? "STREAM SAFE" : "ПОТОК БЕЗОПАСЕН";
+        captionText.innerText = en ? "STREAM STATUS" : "СТАТУС ТРАНСЛЯЦИИ";
+        targetName.innerText = en ? "NO VIOLATIONS DETECTED" : "НАРУШЕНИЙ НЕ ВЫЯВЛЕНО";
+        probCaption.innerText = en ? "SAFETY" : "БЕЗОПАСНОСТЬ";
+        probCaption.style.color = "var(--blew-blue)";
+        probValue.className = "censor-prob-value safe";
+        probValue.innerText = "100%";
+        progressBar.className = "progress-bar safe";
+        progressBar.style.width = "100%";
+        barText.innerText = "100%";
+      }
+    }
+
+    // Connect language change to immediately re-render shield overlay
+    if (window.I18N) {
+      window.I18N.onLanguageChange(() => {
+        if (currentScheduledCue) {
+          renderScheduledCue();
+        } else if (lastShieldState) {
+          setShieldState(lastShieldState.isNsfw, lastShieldState.reason, lastShieldState.score);
+        } else {
+          setShieldState(false, isEnglish() ? "STREAM SAFE" : "ПОТОК БЕЗОПАСЕН");
+        }
+      });
+      window.I18N.applyToDOM();
+    }
+
+    function connect() {
+      const socket = new WebSocket(WS_URL);
+      socket.onopen = () => {
+        socket.send(JSON.stringify({ type: "register", client: "shield" }));
+      };
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "shield_state_update") {
+            if (!data.is_nsfw) {
+              clearScheduledCueState();
+              setShieldState(false, data.reason);
+            } else if (data.active_cue) {
+              setScheduledCueState(data.active_cue);
+            } else if (!currentScheduledCue) {
+              setShieldState(true, data.reason, data.score);
+            }
+          } else if (data.type === "scheduled_cue_started" || data.type === "scheduled_cue_progress") {
+            setScheduledCueState(data);
+          } else if (data.type === "scheduled_cue_ended") {
+            clearScheduledCueState();
+            setShieldState(false, isEnglish() ? "STREAM SAFE" : "ПОТОК БЕЗОПАСЕН");
+          } else if (data.type === "banned_violation_spotted") {
+            clearScheduledCueState();
+            setShieldState(true, isEnglish() ? `OCR Stop-word: ${data.word || "forbidden word"}` : `OCR стоп-слово: ${data.word || "запрещенное слово"}`);
+          } else if (data.type === "new_incident" && data.incident) {
+            if (data.incident.violation_type !== "CUE") {
+              clearScheduledCueState();
+              setShieldState(true, data.incident.target || data.incident.reason, data.incident.score);
+            }
+          } else if (data.type === "language_changed") {
+            if (data.language && window.I18N) {
+              window.I18N.setLanguage(data.language);
+            }
+          } else if (data.type === "init_state") {
+            if (data.language && window.I18N) {
+              window.I18N.setLanguage(data.language);
+            }
+            if (typeof data.shield_donate_enabled !== "undefined") {
+              setDonateVisible(data.shield_donate_enabled);
+            }
+            if (data.active_cue) {
+              setScheduledCueState(data.active_cue);
+            } else if (Array.isArray(data.scheduled_cues) && data.player_sync && typeof data.player_sync.time === "number") {
+              const curTime = data.player_sync.time;
+              const matchingCue = data.scheduled_cues.find(c => curTime >= c.start_sec && curTime <= c.end_sec);
+              if (matchingCue) {
+                const rem = Math.max(0, matchingCue.end_sec - curTime);
+                const total = Math.max(0.1, matchingCue.end_sec - Math.min(curTime, matchingCue.start_sec));
+                setScheduledCueState({
+                  cue_id: matchingCue.id,
+                  reason: matchingCue.reason || `${isEnglish() ? "Timing" : "Тайминг"} ${matchingCue.formatted_range}`,
+                  range: matchingCue.formatted_range,
+                  remaining_sec: rem,
+                  total_sec: total,
+                  current_time: curTime,
+                  is_playing: data.player_sync.is_playing
+                });
+              } else if (data.is_censor_active) {
+                const activeReason = data.active_censor_reason || (isEnglish() ? "UNACCEPTABLE CONTENT (NSFW)" : "НЕДОПУСТИМЫЙ КОНТЕНТ (NSFW)");
+                setShieldState(true, activeReason, data.active_censor_score);
+              } else {
+                setShieldState(false, isEnglish() ? "STREAM SAFE" : "ПОТОК БЕЗОПАСЕН");
+              }
+            } else if (data.is_censor_active) {
+              const activeReason = data.active_censor_reason || (isEnglish() ? "UNACCEPTABLE CONTENT (NSFW)" : "НЕДОПУСТИМЫЙ КОНТЕНТ (NSFW)");
+              setShieldState(true, activeReason, data.active_censor_score);
+            } else {
+              setShieldState(false, isEnglish() ? "STREAM SAFE" : "ПОТОК БЕЗОПАСЕН");
+            }
+          } else if (data.type === "shield_donate_changed") {
+            setDonateVisible(data.enabled);
+          }
+        } catch(e) {}
+      };
+      socket.onclose = () => setTimeout(connect, 2000);
+    }
+    connect();
+  </script>
+</body>
+</html>

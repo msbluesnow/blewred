@@ -1,0 +1,28 @@
+[twitch_hate_speech_en]
+n????r # e.g.
+n??a
+retard
+c?nt
+b??ch
+person.pdf
+# etc...
+
+[twitch_hate_speech_ru]
+3.14д0р # для примера
+носильщик
+роскомнадзор
+# и т.п.
+
+[toxic_japanese]
+死ね
+クタバレ
+くтабаре
+ばか
+馬鹿
+きさま
+貴様
+てめえ
+ちくしょう
+
+[custom_channel]
+# Add your channel-specific rules here

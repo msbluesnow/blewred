@@ -1,0 +1,68 @@
+blewred — Preemptive Live Stream Protection Suite
+Copyright 2026 msbluesnow (https://github.com/msbluesnow/blewred)
+
+This product includes software developed by msbluesnow (https://github.com/msbluesnow/blewred)
+and its contributors.
+
+========================================================================
+Third-Party Neural Network Models & Attributions
+========================================================================
+
+1. Falconsai ViT Classifier (vit_nsfw.onnx):
+   - Description: Two-stage Vision Transformer screener model.
+   - Creator/Author: Falconsai (https://huggingface.co/Falconsai)
+   - Repository: https://huggingface.co/Falconsai/nsfw_image_detection
+   - License: Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
+
+2. NudeNet Detector (640m.onnx):
+   - Description: Anatomical object detection model.
+   - Creator/Author: Bedapudi Praneeth (https://github.com/notAI-tech)
+   - Repository: https://github.com/notAI-tech/NudeNet
+   - License: GNU Affero General Public License v3.0 (AGPL-3.0)
+   - Notice: Model weights are not checked into or bundled with this source
+     repository. The blewred software functions as an independent application
+     that optionally fetches external model weights at runtime upon the user's
+     explicit request.
+
+========================================================================
+Third-Party Fonts & Media Assets
+========================================================================
+
+1. Adwaita Fonts (ui/fonts/):
+   - Includes: AdwaitaSans-Regular.ttf, AdwaitaSans-Italic.ttf,
+               AdwaitaMono-Regular.ttf, AdwaitaMono-Bold.ttf
+   - Creator/Author: GNOME Project (https://gitlab.gnome.org/GNOME/adwaita-fonts)
+   - License: SIL Open Font License, Version 1.1 (OFL-1.1)
+   - See ui/fonts/OFL.txt for the full license text.
+
+2. Warning Alert Audio (ui/universfield-warning-alert-132471.mp3):
+   - Creator/Author: Universfield via Pixabay
+   - License: Pixabay Content License (Free for commercial and non-commercial use)
+
+========================================================================
+Modular Components & OBS Studio Integration
+========================================================================
+
+1. OBS Studio Plugin (plugins/obs-blewred/):
+   - Description: D3D11 HLSL shader filter plugin for OBS Studio.
+   - License: GNU General Public License v2.0 or later (GPL-2.0-or-later)
+   - Notice: The OBS plugin runs as a separate module inside the OBS Studio
+     process (obs64.exe) and communicates with blewred via network sockets
+     (UDP/WebSocket) and Windows Shared Memory. In compliance with the OBS Studio
+     Plugin API guidelines and the GNU GPLv2, source code for the plugin is
+     licensed under GPL-2.0-or-later. See plugins/obs-blewred/LICENSE.
+
+========================================================================
+Packaging & Installer Utilities
+========================================================================
+
+1. NSIS (Nullsoft Scriptable Install System):
+   - Description: Windows installer compilation framework utilized by Tauri v2 bundler.
+   - License: zlib/libpng License with components under Common Public License (CPL-1.0) and LGPL (https://nsis.sourceforge.io/License)
+   - Copyright: Copyright (C) 1999-2024 Contributors to NSIS
+
+2. Inno Setup (build/installer/setup.iss):
+   - Description: Standalone Windows installer compiler script for blewred packaging.
+   - Author: Jordan Russell, Martijn Laan
+   - License: Inno Setup License (Modified BSD-style, Permissive)
+   - Website: https://jrsoftware.org/isinfo.php

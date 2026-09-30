@@ -1,0 +1,13 @@
+{
+  "name": "blewred-docs",
+  "version": "0.5.0-alpha.1",
+  "description": "Documentation for blewred - Preemptive Live Stream Protection Suite",
+  "scripts": {
+    "docs:dev": "vitepress dev .",
+    "docs:build": "vitepress build .",
+    "docs:preview": "vitepress preview ."
+  },
+  "devDependencies": {
+    "vitepress": "^1.0.0"
+  }
+}

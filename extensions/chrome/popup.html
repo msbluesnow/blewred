@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #11141b;
+      color: #d1d5db;
+      font-size: 12px;
+      line-height: 1.4;
+      padding: 10px;
+    }
+    .panel {
+      margin-bottom: 0;
+      background-color: #181b21;
+      border: 1px solid #2b313c;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    .panel-heading {
+      padding: 8px 12px;
+      border-bottom: 1px solid #262c37;
+      background: linear-gradient(to bottom, #252a33 0%, #1c2027 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ext-lang-group {
+      display: inline-flex;
+      border: 1px solid #2d3748;
+      border-radius: 3px;
+      overflow: hidden;
+      font-size: 9.5px;
+      font-weight: 700;
+    }
+    .ext-lang-btn {
+      padding: 2px 5px;
+      background: #1c2027;
+      color: #94a3b8;
+      border: none;
+      cursor: pointer;
+      font-size: 9.5px;
+      font-weight: 700;
+      transition: background 0.15s, color 0.15s;
+    }
+    .ext-lang-btn.active {
+      background: #19aeff;
+      color: #ffffff;
+    }
+    .panel-body {
+      padding: 10px 12px;
+    }
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #20242d;
+    }
+    .status-row:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .status-name {
+      color: #94a3b8;
+      font-size: 11px;
+    }
+    .label {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+      color: #ffffff;
+      text-align: center;
+      white-space: nowrap;
+      border-radius: 3px;
+    }
+    .label-success {
+      background-color: #10b981;
+    }
+    .label-danger {
+      background-color: #ff4141;
+    }
+    .label-warning {
+      background-color: #f59e0b;
+    }
+    .label-info {
+      background-color: #19aeff;
+    }
+    .label-default {
+      background-color: #4b5563;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #38bdf8;
+      background-color: #121418;
+      border: 1px solid #2b313c;
+      border-radius: 10px;
+      font-family: monospace;
+    }
+    .mode-section {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #20242d;
+    }
+    .mode-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn-group {
+      display: flex;
+      width: 100%;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #2d3748;
+    }
+    .btn {
+      flex: 1;
+      padding: 5px 4px;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-default {
+      background: linear-gradient(to bottom, #232832 0%, #1a1e26 100%);
+      color: #94a3b8;
+      border-right: 1px solid #2d3748;
+    }
+    .btn-default:last-child {
+      border-right: none;
+    }
+    .btn-default:hover {
+      background: linear-gradient(to bottom, #2b323e 0%, #20252f 100%);
+      color: #ffffff;
+    }
+    .btn-primary.active-mode {
+      background: linear-gradient(to bottom, #19aeff 0%, #0077c2 100%);
+      color: #ffffff;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+    .btn-success.active-mode {
+      background: linear-gradient(to bottom, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+    .btn-warning.active-mode {
+      background: linear-gradient(to bottom, #f59e0b 0%, #d97706 100%);
+      color: #ffffff;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+    .btn-danger.active-mode {
+      background: linear-gradient(to bottom, #ef4444 0%, #b91c1c 100%);
+      color: #ffffff;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+    .panel-footer-note {
+      margin-top: 10px;
+      padding-top: 6px;
+      border-top: 1px solid #20242d;
+      font-size: 9.5px;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#19aeff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span>blewred Interceptor</span>
+        <span class="badge" style="font-size: 8.5px; padding: 1px 4px; border-radius: 3px; font-weight: 600;">v0.5.0-alpha</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <div class="ext-lang-group" id="ext-lang-group">
+          <button type="button" class="ext-lang-btn" id="ext-lang-ru">RU</button>
+          <button type="button" class="ext-lang-btn active" id="ext-lang-en">EN</button>
+        </div>
+        <span class="label label-danger" id="bridge-badge" data-i18n="ext_badge_offline">Offline</span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="status-row">
+        <span class="status-name" data-i18n="ext_label_bridge">Core (Port 51789):</span>
+        <span id="bridge-status-text" style="font-weight: 600; color: #ff6b6b; font-size: 11px;" data-i18n="ext_core_not_running">blewred not running</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name" data-i18n="ext_label_mode">Protection Mode:</span>
+        <span class="label label-default" id="current-mode-badge" data-i18n="ext_mode_detecting">Detecting...</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name" data-i18n="ext_label_player_det">Player Detection:</span>
+        <span class="label label-default" id="player-detected-badge" data-i18n="ext_player_not_detected">Not Detected</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name" data-i18n="ext_label_player_name">Player Name:</span>
+        <span id="player-name-text" style="font-weight: 600; color: #38bdf8; font-size: 11px;" data-i18n="ext_player_waiting">Waiting...</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name" data-i18n="ext_label_player_sync">Current Status:</span>
+        <span class="badge" id="player-sync-status-badge" style="max-width: 175px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" data-i18n="ext_status_waiting">Waiting for player...</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name" data-i18n="ext_label_models">Neural Models (GPU):</span>
+        <span class="label label-default" id="models-status-badge" data-i18n="ext_models_waiting">Waiting for core</span>
+      </div>
+
+      <div style="margin-top: 8px; margin-bottom: 4px;">
+        <button type="button" class="btn btn-primary" id="btn-open-preview-window" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 8px; font-weight: 700; text-transform: uppercase; font-size: 10.5px; border-radius: 4px; background: linear-gradient(to bottom, #19aeff 0%, #0077c2 100%); color: #ffffff; border: 1px solid #19aeff; cursor: pointer;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span data-i18n="ext_btn_lookahead_window">Lookahead Video Window</span>
+        </button>
+      </div>
+
+      <div class="mode-section">
+        <div class="mode-label">
+          <span data-i18n="ext_mode_control">Protection Mode Control:</span>
+          <span id="mode-hint-text" style="font-size: 10px; color: #38bdf8; text-transform: none;"></span>
+        </div>
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-default" id="btn-mode-1" data-i18n="ext_btn_mode_1">Player (1)</button>
+          <button type="button" class="btn btn-default" id="btn-mode-0" data-i18n="ext_btn_mode_0">Hybrid (0)</button>
+          <button type="button" class="btn btn-default" id="btn-mode-2" data-i18n="ext_btn_mode_2">Screen (2)</button>
+          <button type="button" class="btn btn-default" id="btn-mode-3" data-i18n="ext_btn_mode_3">Off (3)</button>
+        </div>
+      </div>
+
+      <div class="panel-footer-note">
+        Kinobox • Alloha • Collaps • Rutube • VK Video • Kodik • YouTube • Twitch
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

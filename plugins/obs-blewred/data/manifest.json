@@ -1,0 +1,18 @@
+{
+  "id": "obs-blewred",
+  "name": "obs-blewred",
+  "display_name": "blewred AI Smart Shield",
+  "author": "msbluesnow",
+  "version": "0.5.0",
+  "version_name": "0.5.0-alpha",
+  "os_arch": "windows-x86_64",
+  "description": "Real-time Cascaded AI Censorship Filter for OBS Studio",
+  "long_description": "Intelligent real-time censorship filter for OBS Studio powered by blewred AI engine. Automatically blurs sensitive content with zero latency.",
+  "urls": {
+    "repository": "https://github.com/msbluesnow/blewred",
+    "website": "http://127.0.0.1:51789",
+    "support": "http://127.0.0.1:51789"
+  },
+  "has_banner": false,
+  "has_icon": false
+}

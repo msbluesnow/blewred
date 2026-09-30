@@ -1,0 +1,84 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "blewred",
+  "version": "0.5.0-alpha.1",
+  "identifier": "com.blewred.streamcompliance",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "blewred",
+        "url": "index.html",
+        "width": 1040,
+        "height": 650,
+        "minWidth": 850,
+        "minHeight": 520,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false,
+        "visible": true
+      },
+      {
+        "label": "lookahead_hud",
+        "title": "blewred",
+        "url": "lookahead_hud.html",
+        "width": 580,
+        "height": 530,
+        "resizable": false,
+        "alwaysOnTop": true,
+        "decorations": false,
+        "transparent": false,
+        "visible": false,
+        "skipTaskbar": false
+      },
+      {
+        "label": "lookahead_preview",
+        "title": "blewred",
+        "url": "lookahead_preview.html",
+        "width": 560,
+        "height": 420,
+        "minWidth": 360,
+        "minHeight": 260,
+        "center": true,
+        "resizable": true,
+        "alwaysOnTop": true,
+        "decorations": false,
+        "transparent": false,
+        "visible": false,
+        "skipTaskbar": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "resources": {
+      "../extensions/**/*": "extensions/",
+      "../config/*": "config/",
+      "../plugins/**/*": "plugins/",
+      "../models/README.txt": "models/README.txt",
+      "../models/.gitkeep": "models/.gitkeep",
+      "../scripts/launch_browser_with_extension.bat": "launch_browser_with_extension.bat"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  }
+}
