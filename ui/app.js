@@ -7,8 +7,8 @@
 // ==============================================================================
 // TOP-LEVEL APPLICATION STATE & PREFERENCES (Eliminate TDZ)
 // ==============================================================================
-let currentLanguage = (typeof window !== "undefined" && window.I18N && window.I18N.getLanguage()) 
-  || (typeof localStorage !== "undefined" && localStorage.getItem("blewred_lang")) 
+let currentLanguage = (typeof window !== "undefined" && window.I18N && window.I18N.getLanguage())
+  || (typeof localStorage !== "undefined" && localStorage.getItem("blewred_lang"))
   || "en";
 let isObsConnected = false;
 let isOcrEnabled = true;
@@ -240,8 +240,8 @@ function updateOperationModeUI(mode) {
       modeEfficiencyBadge.style.background = "rgba(0, 180, 216, 0.14)";
       modeEfficiencyBadge.style.borderColor = "rgba(0, 180, 216, 0.35)";
     } else if (mode === 2) {
-      modeEfficiencyBadge.textContent = isOcrEnabled 
-        ? (isEn ? "Screen active • OCR enabled" : "Экран активен • OCR включен") 
+      modeEfficiencyBadge.textContent = isOcrEnabled
+        ? (isEn ? "Screen active • OCR enabled" : "Экран активен • OCR включен")
         : (isEn ? "Screen active • OCR disabled" : "Экран активен • OCR отключен");
       modeEfficiencyBadge.style.color = "#4ade80";
       modeEfficiencyBadge.style.background = "rgba(0, 230, 118, 0.14)";
@@ -252,8 +252,8 @@ function updateOperationModeUI(mode) {
       modeEfficiencyBadge.style.background = "rgba(239, 68, 68, 0.14)";
       modeEfficiencyBadge.style.borderColor = "rgba(239, 68, 68, 0.35)";
     } else {
-      modeEfficiencyBadge.textContent = isOcrEnabled 
-        ? (isEn ? "Balanced mode" : "Сбалансированный режим") 
+      modeEfficiencyBadge.textContent = isOcrEnabled
+        ? (isEn ? "Balanced mode" : "Сбалансированный режим")
         : (isEn ? "Balanced (OCR off)" : "Сбалансированный (OCR выкл)");
       modeEfficiencyBadge.style.color = "#fbbf24";
       modeEfficiencyBadge.style.background = "rgba(255, 183, 3, 0.14)";
@@ -263,7 +263,7 @@ function updateOperationModeUI(mode) {
 
   try {
     localStorage.setItem("blewred_operation_mode", mode.toString());
-  } catch (e) {}
+  } catch (e) { }
 
   applyRealtimeFpsState({
     opMode: mode,
@@ -286,16 +286,16 @@ function setOperationMode(mode) {
     type: mode === 3 ? "warning" : "system",
     timestamp: new Date().toTimeString().split(" ")[0],
     message: _isEnMode
-      ? (mode === 1 
+      ? (mode === 1
         ? "[Mode] PLAYER ANALYSIS: Screen capture disabled, CPU < 1%. Extension video analysis active."
-        : (mode === 2 
+        : (mode === 2
           ? `[Mode] SCREEN ANALYSIS: Continuous desktop monitoring${isOcrEnabled ? " and OCR active" : " (OCR disabled)"}.`
           : (mode === 3
             ? "[Mode] PROTECTION OFF (Standby): Monitoring paused, active locks cleared."
             : `[Mode] HYBRID MODE: Screen and player protected${isOcrEnabled ? "" : " (OCR disabled)"}.`)))
-      : (mode === 1 
+      : (mode === 1
         ? "[Режим работы] АНАЛИЗ ПЛЕЕРА: Захват экрана отключен, CPU < 1%. Анализ видео через расширение активен."
-        : (mode === 2 
+        : (mode === 2
           ? `[Режим работы] АНАЛИЗ ЭКРАНА: Непрерывный мониторинг рабочего стола${isOcrEnabled ? " и OCR активны" : " (OCR отключен)"}.`
           : (mode === 3
             ? "[Режим работы] ЗАЩИТА ОТКЛЮЧЕНА (Standby): Мониторинг приостановлен, активные блокировки сняты."
@@ -306,7 +306,7 @@ function setOperationMode(mode) {
     socket.send(JSON.stringify({ type: "set_operation_mode", mode: mode }));
   }
   if (window.__TAURI__ && window.__TAURI__.core) {
-    window.__TAURI__.core.invoke("set_operation_mode", { mode: mode }).catch(() => {});
+    window.__TAURI__.core.invoke("set_operation_mode", { mode: mode }).catch(() => { });
   }
 }
 
@@ -344,7 +344,7 @@ function updateOcrStateUI(enabled) {
   }
   try {
     localStorage.setItem("blewred_ocr_enabled", isOcrEnabled ? "true" : "false");
-  } catch (e) {}
+  } catch (e) { }
 
   if (liveOcrCard) {
     if (!isOcrEnabled) {
@@ -390,7 +390,7 @@ function updateOcrStateUI(enabled) {
   }
 
   if (modeEfficiencyBadge && currentOperationMode === 2) {
-    modeEfficiencyBadge.textContent = isOcrEnabled 
+    modeEfficiencyBadge.textContent = isOcrEnabled
       ? (_isEnOcr ? "Screen active • OCR enabled" : "Экран активен • OCR включен")
       : (_isEnOcr ? "Screen active • OCR disabled" : "Экран активен • OCR отключен");
   }
@@ -415,7 +415,7 @@ function setOcrEnabled(enabled) {
     }));
   }
   if (window.__TAURI__ && window.__TAURI__.core) {
-    window.__TAURI__.core.invoke("toggle_ocr", { enabled: enabled }).catch(() => {});
+    window.__TAURI__.core.invoke("toggle_ocr", { enabled: enabled }).catch(() => { });
   }
 }
 
@@ -476,7 +476,7 @@ function playLookaheadChimeFallback() {
     gain2.connect(ctx.destination);
     osc2.start(now + 0.18);
     osc2.stop(now + 0.55);
-  } catch (e) {}
+  } catch (e) { }
 }
 
 function drawLookaheadBoxes(boxes) {
@@ -613,7 +613,7 @@ if (btnLookaheadAllow) {
 function formatSensitivityUI(val) {
   const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
   let modeName = isEn ? "Balanced" : "Сбалансированная";
-  let desc = isEn 
+  let desc = isEn
     ? "Balanced mode (Twitch / YouTube standard). Filters explicit nudity without false triggers."
     : "Сбалансированный режим (стандарт Twitch / YouTube). Отсекает явную наготу без ложных срабатываний.";
   if (val < 46) {
@@ -773,7 +773,7 @@ function sendCensorCategories() {
   };
   try {
     localStorage.setItem("blewred_censor_categories", JSON.stringify(cats));
-  } catch (e) {}
+  } catch (e) { }
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({
       type: "set_censor_categories",
@@ -781,7 +781,7 @@ function sendCensorCategories() {
     }));
   }
   if (window.__TAURI__ && window.__TAURI__.core) {
-    window.__TAURI__.core.invoke("set_censor_categories", { categories: cats }).catch(() => {});
+    window.__TAURI__.core.invoke("set_censor_categories", { categories: cats }).catch(() => { });
   }
 }
 
@@ -861,7 +861,7 @@ function updateLiveFrameMetrics(data) {
 
   // 1. Update NSFW live radar
   if (liveNsfwClassTag) {
-    liveNsfwClassTag.textContent = data.nsfw_category 
+    liveNsfwClassTag.textContent = data.nsfw_category
       ? localizeCategory(data.nsfw_category, isEn)
       : (isEn ? "NEUTRAL" : "НЕЙТРАЛЬНО");
     liveNsfwClassTag.className = data.nsfw_violation ? "live-class-tag danger-tag" : "live-class-tag";
@@ -879,8 +879,8 @@ function updateLiveFrameMetrics(data) {
   }
 
   if (liveNsfwStatusPill) {
-    liveNsfwStatusPill.textContent = data.censor_active 
-      ? (isEn ? "CENSOR ACTIVE" : "ЦЕНЗУРА АКТИВНА") 
+    liveNsfwStatusPill.textContent = data.censor_active
+      ? (isEn ? "CENSOR ACTIVE" : "ЦЕНЗУРА АКТИВНА")
       : (isEn ? "STREAM SAFE" : "ПОТОК БЕЗОПАСЕН");
     liveNsfwStatusPill.className = data.censor_active ? "live-status-pill danger" : "live-status-pill safe";
   }
@@ -910,8 +910,8 @@ function updateLiveFrameMetrics(data) {
     if (liveOcrTime) liveOcrTime.textContent = "";
   } else {
     if (liveOcrPreviewText) {
-      liveOcrPreviewText.textContent = data.ocr_snippet && data.ocr_snippet.trim().length > 0 
-        ? data.ocr_snippet 
+      liveOcrPreviewText.textContent = data.ocr_snippet && data.ocr_snippet.trim().length > 0
+        ? data.ocr_snippet
         : (isEn ? "(no text detected on selected monitor)" : "(текст на выбранном мониторе не обнаружен)");
     }
 
@@ -919,15 +919,15 @@ function updateLiveFrameMetrics(data) {
       if (data.banned_words && data.banned_words.length > 0) {
         liveOcrWordsWrap.innerHTML = data.banned_words.map(w => `<span class="badge-banned-word">${w.toUpperCase()}</span>`).join(" ");
       } else {
-        liveOcrWordsWrap.innerHTML = isEn 
-          ? '<span class="badge-none">NO STOPWORDS IN FRAME</span>' 
+        liveOcrWordsWrap.innerHTML = isEn
+          ? '<span class="badge-none">NO STOPWORDS IN FRAME</span>'
           : '<span class="badge-none">НЕТ СТОП-СЛОВ В КАДРЕ</span>';
       }
     }
 
     if (liveOcrStatusPill) {
-      liveOcrStatusPill.textContent = data.ocr_violation 
-        ? (isEn ? "STOPWORD IN FRAME" : "СТОП-СЛОВО В КАДРЕ") 
+      liveOcrStatusPill.textContent = data.ocr_violation
+        ? (isEn ? "STOPWORD IN FRAME" : "СТОП-СЛОВО В КАДРЕ")
         : (isEn ? "TEXT CLEAN" : "ТЕКСТ ЧИСТ");
       liveOcrStatusPill.className = data.ocr_violation ? "live-status-pill danger" : "live-status-pill safe";
     }
@@ -966,16 +966,16 @@ function updateLiveFrameMetrics(data) {
   // 5. Update Cascade Stage 2 (640m Localizer) & Bounding Boxes
   if (liveBoxesBadge) {
     const bCount = data.box_count || 0;
-    liveBoxesBadge.textContent = bCount > 0 
-      ? (isEn ? `${bCount} box(es)` : `${bCount} бокс(ов)`) 
+    liveBoxesBadge.textContent = bCount > 0
+      ? (isEn ? `${bCount} box(es)` : `${bCount} бокс(ов)`)
       : (isEn ? "0 boxes" : "0 боксов");
     liveBoxesBadge.className = bCount > 0 ? "box-badge active" : "box-badge";
   }
   if (liveStage2Label) {
     const bCount = data.box_count || 0;
     const s2Pct = data.stage2_pct || `${((data.stage2_score || 0) * 100).toFixed(0)}%`;
-    liveStage2Label.textContent = bCount > 0 
-      ? (isEn ? `${bCount} box(es) (${s2Pct})` : `${bCount} бокс(а) (${s2Pct})`) 
+    liveStage2Label.textContent = bCount > 0
+      ? (isEn ? `${bCount} box(es) (${s2Pct})` : `${bCount} бокс(а) (${s2Pct})`)
       : (isEn ? "No anatomy detected" : "Анатомии не найдено");
   }
   if (liveStage2Bar) {
@@ -1142,7 +1142,7 @@ function connectWebSocket() {
         const shieldVal = savedShield === "true";
         socket.send(JSON.stringify({ type: "toggle_censor_shield", enabled: shieldVal }));
         if (window.__TAURI__ && window.__TAURI__.core) {
-          window.__TAURI__.core.invoke("toggle_censor_shield", { enabled: shieldVal }).catch(() => {});
+          window.__TAURI__.core.invoke("toggle_censor_shield", { enabled: shieldVal }).catch(() => { });
         }
       }
       const savedFps = localStorage.getItem("blewred_fps_boosted");
@@ -1150,7 +1150,7 @@ function connectWebSocket() {
         const fpsVal = savedFps === "true";
         socket.send(JSON.stringify({ type: "set_vision_boost", enabled: fpsVal }));
         if (window.__TAURI__ && window.__TAURI__.core) {
-          window.__TAURI__.core.invoke("set_fps_boost", { enabled: fpsVal }).catch(() => {});
+          window.__TAURI__.core.invoke("set_fps_boost", { enabled: fpsVal }).catch(() => { });
         }
       }
       const savedMode = localStorage.getItem("blewred_operation_mode");
@@ -1159,7 +1159,7 @@ function connectWebSocket() {
         if (!isNaN(modeVal)) {
           socket.send(JSON.stringify({ type: "set_operation_mode", mode: modeVal }));
           if (window.__TAURI__ && window.__TAURI__.core) {
-            window.__TAURI__.core.invoke("set_operation_mode", { mode: modeVal }).catch(() => {});
+            window.__TAURI__.core.invoke("set_operation_mode", { mode: modeVal }).catch(() => { });
           }
         }
       }
@@ -1208,9 +1208,9 @@ function handleServerMessage(data) {
     case "init_state":
       if (stopwordsTextarea) stopwordsTextarea.value = data.rules_text || "";
       if (activeRulesCounter) {
-      const _isEnR = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
-      activeRulesCounter.innerText = `${data.rules_count || 0} ${_isEnR ? "rules" : "правил"}`;
-    }
+        const _isEnR = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
+        activeRulesCounter.innerText = `${data.rules_count || 0} ${_isEnR ? "rules" : "правил"}`;
+      }
       updateObsStatus(data.obs_connected);
       if (gpuStatVal && data.gpu_info) {
         gpuStatVal.innerText = data.gpu_info;
@@ -1230,7 +1230,7 @@ function handleServerMessage(data) {
       }
       if (data.ocr_enabled !== undefined) {
         let savedOcr = null;
-        try { savedOcr = localStorage.getItem("blewred_ocr_enabled"); } catch (e) {}
+        try { savedOcr = localStorage.getItem("blewred_ocr_enabled"); } catch (e) { }
         const targetOcr = savedOcr !== null ? (savedOcr === "true") : data.ocr_enabled;
         updateOcrStateUI(targetOcr);
         if (savedOcr !== null && (savedOcr === "true") !== data.ocr_enabled) {
@@ -1238,7 +1238,7 @@ function handleServerMessage(data) {
             socket.send(JSON.stringify({ type: "toggle_ocr", enabled: targetOcr }));
           }
           if (window.__TAURI__ && window.__TAURI__.core) {
-            window.__TAURI__.core.invoke("toggle_ocr", { enabled: targetOcr }).catch(() => {});
+            window.__TAURI__.core.invoke("toggle_ocr", { enabled: targetOcr }).catch(() => { });
           }
         }
       }
@@ -1248,6 +1248,12 @@ function handleServerMessage(data) {
       }
       if (data.extension_connected !== undefined) {
         updateExtensionStatusUI(data.extension_connected);
+      }
+      if (data.model_profiles && data.active_model_profile) {
+        updateModelProfilesList(data.model_profiles, data.active_model_profile);
+      }
+      if (data.model_tuning) {
+        applyModelTuningToUI(data.model_tuning, data.active_model_profile);
       }
       // Prioritize user's saved preference for Censor Shield (Default: ON)
       let shieldEnabled = true;
@@ -1263,10 +1269,10 @@ function handleServerMessage(data) {
             socket.send(JSON.stringify({ type: "toggle_censor_shield", enabled: shieldEnabled }));
           }
           if (window.__TAURI__ && window.__TAURI__.core) {
-            window.__TAURI__.core.invoke("toggle_censor_shield", { enabled: shieldEnabled }).catch(() => {});
+            window.__TAURI__.core.invoke("toggle_censor_shield", { enabled: shieldEnabled }).catch(() => { });
           }
         }
-      } catch (e) {}
+      } catch (e) { }
       if (toggleCensorShield) {
         toggleCensorShield.checked = shieldEnabled;
       }
@@ -1284,7 +1290,7 @@ function handleServerMessage(data) {
             }
           }
         }
-      } catch (e) {}
+      } catch (e) { }
       if (toggleShieldDonate) {
         toggleShieldDonate.checked = donateEnabled;
       }
@@ -1296,7 +1302,7 @@ function handleServerMessage(data) {
           const fpsBoost = savedFps === "true";
           setFpsMode(fpsBoost);
         }
-      } catch (e) {}
+      } catch (e) { }
 
       if (data.nsfw_threshold !== undefined && nsfwThresholdSlider) {
         nsfwThresholdSlider.value = data.nsfw_threshold;
@@ -1329,7 +1335,7 @@ function handleServerMessage(data) {
     case "hide_setup_guide_changed":
       if (chkHideSetupGuide) chkHideSetupGuide.checked = !!data.hide;
       if (streamerSetupGuide) streamerSetupGuide.style.display = data.hide ? "none" : "block";
-      try { localStorage.setItem("blewred_hide_setup_guide", data.hide ? "true" : "false"); } catch (e) {}
+      try { localStorage.setItem("blewred_hide_setup_guide", data.hide ? "true" : "false"); } catch (e) { }
       break;
 
     case "live_frame_metrics":
@@ -1366,6 +1372,18 @@ function handleServerMessage(data) {
       }
       break;
 
+    case "model_profiles_changed":
+      if (typeof updateModelProfilesList === "function") {
+        updateModelProfilesList(data.profiles, data.active_model_profile);
+      }
+      break;
+
+    case "model_tuning_changed":
+      if (typeof applyModelTuningToUI === "function") {
+        applyModelTuningToUI(data.tuning, data.active_model_profile);
+      }
+      break;
+
     case "realtime_guard_changed":
       {
         const _isEnGuard = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
@@ -1399,7 +1417,7 @@ function handleServerMessage(data) {
           if (savedShield !== null) {
             isShieldOn = savedShield === "true";
           }
-        } catch (e) {}
+        } catch (e) { }
         toggleCensorShield.checked = isShieldOn;
       }
       {
@@ -1418,8 +1436,8 @@ function handleServerMessage(data) {
       if (monitorSelect) monitorSelect.value = data.selected_monitor;
       if (monitorActiveBadge) {
         const _isEnMon = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
-        monitorActiveBadge.innerText = data.selected_monitor === -1 
-          ? (_isEnMon ? "All Monitors" : "Все мониторы") 
+        monitorActiveBadge.innerText = data.selected_monitor === -1
+          ? (_isEnMon ? "All Monitors" : "Все мониторы")
           : (_isEnMon ? `Monitor ${data.selected_monitor + 1}` : `Монитор ${data.selected_monitor + 1}`);
       }
       break;
@@ -1620,7 +1638,7 @@ function updateTelemetry(data) {
     let savedOcr = null;
     try {
       savedOcr = localStorage.getItem("blewred_ocr_enabled");
-    } catch (e) {}
+    } catch (e) { }
 
     if (savedOcr !== null) {
       const userChoice = (savedOcr === "true");
@@ -1629,7 +1647,7 @@ function updateTelemetry(data) {
           socket.send(JSON.stringify({ type: "toggle_ocr", enabled: userChoice }));
         }
         if (window.__TAURI__ && window.__TAURI__.core) {
-          window.__TAURI__.core.invoke("toggle_ocr", { enabled: userChoice }).catch(() => {});
+          window.__TAURI__.core.invoke("toggle_ocr", { enabled: userChoice }).catch(() => { });
         }
       }
       updateOcrStateUI(userChoice);
@@ -1643,7 +1661,7 @@ function updateTelemetry(data) {
     let savedMode = null;
     try {
       savedMode = localStorage.getItem("blewred_operation_mode");
-    } catch (e) {}
+    } catch (e) { }
 
     if (savedMode !== null) {
       const targetMode = parseInt(savedMode, 10);
@@ -1653,7 +1671,7 @@ function updateTelemetry(data) {
           socket.send(JSON.stringify({ type: "set_operation_mode", mode: targetMode }));
         }
         if (window.__TAURI__ && window.__TAURI__.core) {
-          window.__TAURI__.core.invoke("set_operation_mode", { mode: targetMode }).catch(() => {});
+          window.__TAURI__.core.invoke("set_operation_mode", { mode: targetMode }).catch(() => { });
         }
         updateOperationModeUI(targetMode);
       } else if (!isNaN(targetMode)) {
@@ -1669,7 +1687,7 @@ function updateTelemetry(data) {
     isBoosted = !!data.fps_boosted;
     try {
       localStorage.setItem("blewred_fps_boosted", isBoosted ? "true" : "false");
-    } catch (e) {}
+    } catch (e) { }
   }
   applyRealtimeFpsState(data);
 
@@ -1690,7 +1708,7 @@ function updateTelemetry(data) {
     let savedShield = null;
     try {
       savedShield = localStorage.getItem("blewred_censor_shield_enabled");
-    } catch (e) {}
+    } catch (e) { }
 
     if (savedShield !== null) {
       const userChoice = (savedShield === "true");
@@ -1699,7 +1717,7 @@ function updateTelemetry(data) {
           socket.send(JSON.stringify({ type: "toggle_censor_shield", enabled: userChoice }));
         }
         if (window.__TAURI__ && window.__TAURI__.core) {
-          window.__TAURI__.core.invoke("toggle_censor_shield", { enabled: userChoice }).catch(() => {});
+          window.__TAURI__.core.invoke("toggle_censor_shield", { enabled: userChoice }).catch(() => { });
         }
       }
       if (toggleCensorShield && document.activeElement !== toggleCensorShield) {
@@ -1790,12 +1808,12 @@ function updateMonitorsDropdown(monitors, selectedMonitor) {
       lastSelectedMonitor = prim.index;
       try {
         localStorage.setItem("blewred_selected_monitor", prim.index.toString());
-      } catch (err) {}
+      } catch (err) { }
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: "set_monitor", monitor_index: prim.index }));
       }
       if (window.__TAURI__ && window.__TAURI__.core) {
-        window.__TAURI__.core.invoke("set_monitor", { index: prim.index }).catch(() => {});
+        window.__TAURI__.core.invoke("set_monitor", { index: prim.index }).catch(() => { });
       }
     }
   }
@@ -1850,7 +1868,7 @@ if (monitorSelect) {
     lastSelectedMonitor = validIdx;
     try {
       localStorage.setItem("blewred_selected_monitor", validIdx.toString());
-    } catch (err) {}
+    } catch (err) { }
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({
         type: "set_monitor",
@@ -1858,7 +1876,7 @@ if (monitorSelect) {
       }));
     }
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("set_monitor", { index: validIdx }).catch(() => {});
+      window.__TAURI__.core.invoke("set_monitor", { index: validIdx }).catch(() => { });
     }
     if (monitorActiveBadge) {
       const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
@@ -1895,7 +1913,7 @@ function updateHudMonitorsDropdown(monitors, selectedHudMonitor) {
     lastSelectedHudMonitor = -1;
     try {
       localStorage.setItem("blewred_hud_monitor", "-1");
-    } catch (err) {}
+    } catch (err) { }
   }
 
   const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
@@ -1929,7 +1947,7 @@ if (hudMonitorSelect) {
     const validIdx = isNaN(idx) ? -1 : idx;
     try {
       localStorage.setItem("blewred_hud_monitor", validIdx.toString());
-    } catch (err) {}
+    } catch (err) { }
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({
         type: "set_hud_monitor",
@@ -1937,7 +1955,7 @@ if (hudMonitorSelect) {
       }));
     }
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("set_hud_monitor", { index: validIdx }).catch(() => {});
+      window.__TAURI__.core.invoke("set_hud_monitor", { index: validIdx }).catch(() => { });
     }
   });
 }
@@ -1946,7 +1964,7 @@ if (hudMonitorSelect) {
 if (btnTestLookaheadHud) {
   btnTestLookaheadHud.addEventListener("click", () => {
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("test_lookahead_alert").catch(() => {});
+      window.__TAURI__.core.invoke("test_lookahead_alert").catch(() => { });
     } else if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "test_lookahead_alert" }));
     }
@@ -1956,7 +1974,7 @@ if (btnTestLookaheadHud) {
 // Lookahead Separate Preview Window Controls
 function openLookaheadWindow() {
   if (window.__TAURI__ && window.__TAURI__.core) {
-    window.__TAURI__.core.invoke("show_lookahead_preview").catch(() => {});
+    window.__TAURI__.core.invoke("show_lookahead_preview").catch(() => { });
   } else if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ type: "open_lookahead_preview" }));
   }
@@ -1964,7 +1982,7 @@ function openLookaheadWindow() {
 
 function toggleLookaheadWindow() {
   if (window.__TAURI__ && window.__TAURI__.core) {
-    window.__TAURI__.core.invoke("toggle_lookahead_preview").catch(() => {});
+    window.__TAURI__.core.invoke("toggle_lookahead_preview").catch(() => { });
   } else if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ type: "toggle_lookahead_preview" }));
   }
@@ -2016,7 +2034,7 @@ if (obsSceneSelect) {
       });
     }
     if (sceneName && window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("set_obs_scene", { scene: sceneName }).catch(() => {});
+      window.__TAURI__.core.invoke("set_obs_scene", { scene: sceneName }).catch(() => { });
     }
   });
 }
@@ -2041,7 +2059,7 @@ function setFpsMode(boosted) {
   updateVisionUI(isBoosted);
   try {
     localStorage.setItem("blewred_fps_boosted", isBoosted ? "true" : "false");
-  } catch (e) {}
+  } catch (e) { }
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({
       type: "set_vision_boost",
@@ -2049,7 +2067,7 @@ function setFpsMode(boosted) {
     }));
   }
   if (window.__TAURI__ && window.__TAURI__.core) {
-    window.__TAURI__.core.invoke("set_fps_boost", { enabled: isBoosted }).catch(() => {});
+    window.__TAURI__.core.invoke("set_fps_boost", { enabled: isBoosted }).catch(() => { });
   }
 }
 
@@ -2091,17 +2109,17 @@ function applyRealtimeFpsState(data) {
   if (!data) return;
 
   const opMode = data.operation_mode !== undefined ? data.operation_mode : currentOperationMode;
-  const isPaused = data.analysis_paused !== undefined 
-    ? !!data.analysis_paused 
+  const isPaused = data.analysis_paused !== undefined
+    ? !!data.analysis_paused
     : (opMode === 1 || opMode >= 3);
 
-  const boosted = data.fps_boosted !== undefined 
-    ? !!data.fps_boosted 
+  const boosted = data.fps_boosted !== undefined
+    ? !!data.fps_boosted
     : (data.boosted !== undefined ? !!data.boosted : isBoosted);
   isBoosted = boosted;
 
-  const dynamicBoost = data.dynamic_boost_active !== undefined 
-    ? !!data.dynamic_boost_active 
+  const dynamicBoost = data.dynamic_boost_active !== undefined
+    ? !!data.dynamic_boost_active
     : currentDynamicBoostActive;
   currentDynamicBoostActive = dynamicBoost;
 
@@ -2138,8 +2156,8 @@ function applyRealtimeFpsState(data) {
     if (isPaused) {
       fpsBadge.className = "mode-badge badge-paused";
       fpsBadge.textContent = "0 FPS";
-      visionModeText.textContent = opMode === 1 
-        ? (isEn ? "Player Lookahead" : "Плеер Lookahead") 
+      visionModeText.textContent = opMode === 1
+        ? (isEn ? "Player Lookahead" : "Плеер Lookahead")
         : (isEn ? "Standby (Paused)" : "Standby (Пауза)");
     } else if (dynamicBoost) {
       fpsBadge.className = "mode-badge badge-dynamic-boost";
@@ -2162,8 +2180,8 @@ function applyRealtimeFpsState(data) {
   // 3. Synchronize Telemetry Stat Item (#fps-stat-val)
   if (fpsStatVal) {
     if (isPaused) {
-      fpsStatVal.textContent = opMode === 1 
-        ? (isEn ? "0 fps (Paused — Player Analysis)" : "0 кадр/сек (Пауза — Анализ плеера)") 
+      fpsStatVal.textContent = opMode === 1
+        ? (isEn ? "0 fps (Paused — Player Analysis)" : "0 кадр/сек (Пауза — Анализ плеера)")
         : (isEn ? "0 fps (Paused — Standby)" : "0 кадр/сек (Пауза — Standby)");
       fpsStatVal.className = "stat-value stat-muted";
     } else if (dynamicBoost) {
@@ -2254,14 +2272,14 @@ function renderCensorTestResult(data) {
     }
     startEmergencyMuteCountdown(3000);
     {
-    const _isEn = (window.I18N && window.I18N.getLanguage() === "en");
-    renderEventItem({
-      type: "warning",
-      timestamp: new Date().toTimeString().split(" ")[0],
-      message: _isEn
-        ? `[!] NSFW DETECTED: ${analysis.status_message || "Violation"} (Risk: ${scorePercent}%) • Screen blocked in OBS`
-        : `[!] NSFW DETECTED: ${analysis.status_message || "Нарушение"} (Риск: ${scorePercent}%) • Экран перекрыт в OBS`
-    });
+      const _isEn = (window.I18N && window.I18N.getLanguage() === "en");
+      renderEventItem({
+        type: "warning",
+        timestamp: new Date().toTimeString().split(" ")[0],
+        message: _isEn
+          ? `[!] NSFW DETECTED: ${analysis.status_message || "Violation"} (Risk: ${scorePercent}%) • Screen blocked in OBS`
+          : `[!] NSFW DETECTED: ${analysis.status_message || "Нарушение"} (Риск: ${scorePercent}%) • Экран перекрыт в OBS`
+      });
     }
   } else {
     if (censorStatusBadge) {
@@ -2281,14 +2299,14 @@ function renderCensorTestResult(data) {
         : `Экран не перекрыт • Видеопоток чист, непристойный контент отсутствует (Риск: ${scorePercent}%).`;
     }
     {
-    const _isEn = (window.I18N && window.I18N.getLanguage() === "en");
-    renderEventItem({
-      type: "success",
-      timestamp: new Date().toTimeString().split(" ")[0],
-      message: _isEn
-        ? `[✓] NO NSFW DETECTED: Stream clean (${scorePercent}% risk) • Screen not blocked`
-        : `[✓] NO NSFW DETECTED: Видеопоток чист (${scorePercent}% риск) • Экран не перекрыт`
-    });
+      const _isEn = (window.I18N && window.I18N.getLanguage() === "en");
+      renderEventItem({
+        type: "success",
+        timestamp: new Date().toTimeString().split(" ")[0],
+        message: _isEn
+          ? `[✓] NO NSFW DETECTED: Stream clean (${scorePercent}% risk) • Screen not blocked`
+          : `[✓] NO NSFW DETECTED: Видеопоток чист (${scorePercent}% риск) • Экран не перекрыт`
+      });
     }
   }
 }
@@ -2499,7 +2517,7 @@ function handleObsSetupResult(data) {
       badgeStepObs.className = "label label-success step-status-badge";
       badgeStepObs.textContent = running ? (_isEn ? "Connected" : "Подключено") : (_isEn ? "Ready (OK)" : "Готово (OK)");
       stepCardObs.classList.add("step-completed");
-      try { localStorage.setItem("blewred_setup_obs_verified", "true"); } catch (e) {}
+      try { localStorage.setItem("blewred_setup_obs_verified", "true"); } catch (e) { }
       if (typeof updateSetupGuideStatus === "function") {
         updateSetupGuideStatus({});
       }
@@ -2565,7 +2583,7 @@ async function checkObsRunningState() {
         isRunning = !!status.is_running;
         exeFound = !!status.exe_found;
       }
-    } catch (e) {}
+    } catch (e) { }
   } else if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ type: "check_obs_status" }));
   }
@@ -2579,8 +2597,8 @@ function updateObsPromptBadge(state) {
   const isUp = !!(state.isConnected || state.is_connected || state.isRunning || state.is_running);
   if (isUp) {
     obsSetupPromptStatusBadge.className = "label label-success";
-    obsSetupPromptStatusBadge.textContent = (state.isConnected || state.is_connected) 
-      ? (_isEn ? "OBS connected (WebSocket ON)" : "OBS подключена (WebSocket ON)") 
+    obsSetupPromptStatusBadge.textContent = (state.isConnected || state.is_connected)
+      ? (_isEn ? "OBS connected (WebSocket ON)" : "OBS подключена (WebSocket ON)")
       : (_isEn ? "OBS Studio running" : "OBS Studio запущена");
     if (obsSetupPromptHint) {
       obsSetupPromptHint.textContent = _isEn ? "Ready to configure! Click \"Continue auto-setup\"" : "Готово к настройке! Нажмите «Продолжить автонастройку»";
@@ -2590,8 +2608,8 @@ function updateObsPromptBadge(state) {
     obsSetupPromptStatusBadge.className = "label label-default";
     obsSetupPromptStatusBadge.textContent = _isEn ? "OBS not running" : "OBS не открыта";
     if (obsSetupPromptHint) {
-      obsSetupPromptHint.textContent = (state.exeFound !== false && state.exe_found !== false) 
-        ? (_isEn ? "or open OBS manually" : "или откройте OBS вручную") 
+      obsSetupPromptHint.textContent = (state.exeFound !== false && state.exe_found !== false)
+        ? (_isEn ? "or open OBS manually" : "или откройте OBS вручную")
         : (_isEn ? "launch OBS manually" : "запустите OBS вручную");
       obsSetupPromptHint.style.color = "#64748b";
     }
@@ -2746,8 +2764,8 @@ function updateCensorShieldUI(enabled, isVisible) {
       obsShieldStat.textContent = isEn ? "ON — overlay active in OBS" : "ON — заставка показана в OBS";
       obsShieldStat.style.color = "#fbbf24";
     } else {
-      obsShieldStat.textContent = enabled 
-        ? (isEn ? "READY — primed on violation" : "READY — готов к показу при нарушениях") 
+      obsShieldStat.textContent = enabled
+        ? (isEn ? "READY — primed on violation" : "READY — готов к показу при нарушениях")
         : (isEn ? "OFF — disabled" : "OFF — выключен");
       obsShieldStat.style.color = enabled ? "#ffffff" : "#94a3b8";
     }
@@ -2759,7 +2777,7 @@ if (toggleCensorShield) {
   try {
     const saved = localStorage.getItem("blewred_censor_shield_enabled");
     toggleCensorShield.checked = (saved === null || saved === "true");
-  } catch (err) {}
+  } catch (err) { }
   updateCensorShieldUI(toggleCensorShield.checked, false);
 
   toggleCensorShield.addEventListener("change", (e) => {
@@ -2767,13 +2785,13 @@ if (toggleCensorShield) {
     lastUserShieldChangeTime = Date.now();
     try {
       localStorage.setItem("blewred_censor_shield_enabled", enabled ? "true" : "false");
-    } catch (err) {}
+    } catch (err) { }
     updateCensorShieldUI(enabled, false);
     const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
     renderEventItem({
       type: enabled ? "system" : "system",
       timestamp: new Date().toTimeString().split(" ")[0],
-      message: isEn 
+      message: isEn
         ? `Censor Shield overlay: ${enabled ? "ENABLED (Primed on violation)" : "DISABLED"}`
         : `Заставка Censor Shield: ${enabled ? "ВКЛЮЧЕНА (Готова к показу при нарушениях)" : "ВЫКЛЮЧЕНА"}`
     });
@@ -2784,7 +2802,7 @@ if (toggleCensorShield) {
       }));
     }
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("toggle_censor_shield", { enabled: enabled }).catch(() => {});
+      window.__TAURI__.core.invoke("toggle_censor_shield", { enabled: enabled }).catch(() => { });
     }
   });
 }
@@ -2795,7 +2813,7 @@ function applyShieldDonateChange(enabled) {
   }
   try {
     localStorage.setItem("blewred_shield_donate", enabled ? "true" : "false");
-  } catch (err) {}
+  } catch (err) { }
   const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
   renderEventItem({
     type: "system",
@@ -2811,7 +2829,7 @@ function applyShieldDonateChange(enabled) {
     }));
   }
   if (window.__TAURI__ && window.__TAURI__.core) {
-    window.__TAURI__.core.invoke("toggle_shield_donate", { enabled: enabled }).catch(() => {});
+    window.__TAURI__.core.invoke("toggle_shield_donate", { enabled: enabled }).catch(() => { });
   }
 }
 
@@ -2843,7 +2861,7 @@ if (toggleShieldDonate) {
     } else {
       toggleShieldDonate.checked = true;
     }
-  } catch (err) {}
+  } catch (err) { }
 
   toggleShieldDonate.addEventListener("click", (e) => {
     if (!e.target.checked) {
@@ -2892,10 +2910,10 @@ if (nsfwThresholdSlider) {
     const val = parseInt(e.target.value, 10);
     try {
       localStorage.setItem("blewred_nsfw_threshold", val.toString());
-    } catch (err) {}
+    } catch (err) { }
     // Final commit via Tauri IPC on release
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("set_nsfw_threshold", { threshold: val }).catch(() => {});
+      window.__TAURI__.core.invoke("set_nsfw_threshold", { threshold: val }).catch(() => { });
     }
   });
 }
@@ -3006,7 +3024,7 @@ function isModifierEvent(e) {
   const k = (e.key || "").toUpperCase();
   const c = (e.code || "").toUpperCase();
   return k === "CONTROL" || k === "SHIFT" || k === "ALT" || k === "META" || k === "OS" ||
-         c.startsWith("CONTROL") || c.startsWith("SHIFT") || c.startsWith("ALT") || c.startsWith("META") || c.startsWith("OS");
+    c.startsWith("CONTROL") || c.startsWith("SHIFT") || c.startsWith("ALT") || c.startsWith("META") || c.startsWith("OS");
 }
 
 function parseHotkeyCombo(combo) {
@@ -3087,9 +3105,9 @@ function formatCanonicalCombo(parsed) {
   }
   const keyUpper = (parsed.key || "").toUpperCase();
   if (keyUpper === "LEFT CTRL" || keyUpper === "RIGHT CTRL" || keyUpper === "CTRL" ||
-      keyUpper === "LEFT SHIFT" || keyUpper === "RIGHT SHIFT" || keyUpper === "SHIFT" ||
-      keyUpper === "LEFT ALT" || keyUpper === "RIGHT ALT" || keyUpper === "ALT" ||
-      keyUpper === "LEFT WIN" || keyUpper === "RIGHT WIN" || keyUpper === "WIN") {
+    keyUpper === "LEFT SHIFT" || keyUpper === "RIGHT SHIFT" || keyUpper === "SHIFT" ||
+    keyUpper === "LEFT ALT" || keyUpper === "RIGHT ALT" || keyUpper === "ALT" ||
+    keyUpper === "LEFT WIN" || keyUpper === "RIGHT WIN" || keyUpper === "WIN") {
     const parts = [];
     if (parsed.ctrl && !keyUpper.includes("CTRL")) parts.push("Ctrl");
     if (parsed.alt && !keyUpper.includes("ALT")) parts.push("Alt");
@@ -3415,8 +3433,8 @@ function renderBannedAlert(alert) {
   }
 
   const _isEnBanned = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
-  const sourceLabel = alert.source === "ocr" 
-    ? (_isEnBanned ? "OCR TEXT" : "OCR ТЕКСТ") 
+  const sourceLabel = alert.source === "ocr"
+    ? (_isEnBanned ? "OCR TEXT" : "OCR ТЕКСТ")
     : (_isEnBanned ? "SCREEN CAPTURE" : "ЭКРАННЫЙ ЗАХВАТ");
   const sourceClass = alert.source === "ocr" ? "source-ocr" : "source-screen";
   const matchWords = (alert.matches || [alert.word || ""]).join(", ");
@@ -3433,7 +3451,7 @@ function renderBannedAlert(alert) {
 
   const status = document.createElement("span");
   status.className = "speech-status status-banned";
-  status.innerHTML = _isEnBanned 
+  status.innerHTML = _isEnBanned
     ? `STOPWORD: <strong>${matchWords}</strong> (CENSOR OBS)`
     : `СТОП-СЛОВО: <strong>${matchWords}</strong> (CENSOR OBS)`;
 
@@ -3523,7 +3541,7 @@ if (btnSaveRules) {
       }));
     }
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("update_rules", { text: text }).catch(() => {});
+      window.__TAURI__.core.invoke("update_rules", { text: text }).catch(() => { });
     }
   });
 }
@@ -3551,7 +3569,7 @@ function restoreLocalPreferences() {
       const isOcr = savedOcr === "true";
       updateOcrStateUI(isOcr);
       if (window.__TAURI__ && window.__TAURI__.core) {
-        window.__TAURI__.core.invoke("toggle_ocr", { enabled: isOcr }).catch(() => {});
+        window.__TAURI__.core.invoke("toggle_ocr", { enabled: isOcr }).catch(() => { });
       }
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: "toggle_ocr", enabled: isOcr }));
@@ -3564,7 +3582,7 @@ function restoreLocalPreferences() {
       if (savedScope || savedPanic || savedThreat) {
         updateHotkeySettingsUI(savedScope || "global", savedPanic || "F9", savedThreat || "F8");
       }
-    } catch (e) {}
+    } catch (e) { }
     const savedHud = localStorage.getItem("blewred_hud_monitor");
     if (savedHud !== null && hudMonitorSelect) {
       const hIdx = parseInt(savedHud, 10);
@@ -3575,7 +3593,7 @@ function restoreLocalPreferences() {
           socket.send(JSON.stringify({ type: "set_hud_monitor", monitor_index: hIdx }));
         }
         if (window.__TAURI__ && window.__TAURI__.core) {
-          window.__TAURI__.core.invoke("set_hud_monitor", { index: hIdx }).catch(() => {});
+          window.__TAURI__.core.invoke("set_hud_monitor", { index: hIdx }).catch(() => { });
         }
       }
     }
@@ -3589,7 +3607,7 @@ function restoreLocalPreferences() {
           socket.send(JSON.stringify({ type: "set_monitor", monitor_index: mIdx }));
         }
         if (window.__TAURI__ && window.__TAURI__.core) {
-          window.__TAURI__.core.invoke("set_monitor", { index: mIdx }).catch(() => {});
+          window.__TAURI__.core.invoke("set_monitor", { index: mIdx }).catch(() => { });
         }
       }
     }
@@ -3604,7 +3622,7 @@ function restoreLocalPreferences() {
           socket.send(JSON.stringify({ type: "set_nsfw_threshold", threshold: th }));
         }
         if (window.__TAURI__ && window.__TAURI__.core) {
-          window.__TAURI__.core.invoke("set_nsfw_threshold", { threshold: th }).catch(() => {});
+          window.__TAURI__.core.invoke("set_nsfw_threshold", { threshold: th }).catch(() => { });
         }
       }
     }
@@ -3614,7 +3632,7 @@ function restoreLocalPreferences() {
         const cats = JSON.parse(savedCategories);
         updateCensorCategoriesUI(cats);
         sendCensorCategories();
-      } catch (e) {}
+      } catch (e) { }
     }
     const savedPrewarn = localStorage.getItem("blewred_cues_prewarn");
     if (savedPrewarn !== null && cuePrewarnSecondsInput) {
@@ -3669,7 +3687,20 @@ async function loadInitialTauriData() {
             selClose.value = userSettings.close_action;
           }
         }
-      } catch (e) {}
+        if (userSettings && userSettings.active_model_profile) {
+          activeModelProfileName = userSettings.active_model_profile;
+        }
+        if (userSettings && userSettings.model_tuning) {
+          applyModelTuningToUI(userSettings.model_tuning, userSettings.active_model_profile);
+        }
+      } catch (e) { }
+
+      try {
+        const profiles = await window.__TAURI__.core.invoke("get_model_profiles");
+        if (Array.isArray(profiles) && profiles.length > 0) {
+          updateModelProfilesList(profiles, activeModelProfileName);
+        }
+      } catch (e) { }
 
       const telem = await window.__TAURI__.core.invoke("get_telemetry");
       if (telem) {
@@ -3788,7 +3819,7 @@ if (btnActionMinimizeTray) {
   btnActionMinimizeTray.addEventListener("click", async () => {
     if (chkCloseRemember && chkCloseRemember.checked) {
       if (window.__TAURI__ && window.__TAURI__.core) {
-        await window.__TAURI__.core.invoke("set_close_action", { action: "tray" }).catch(() => {});
+        await window.__TAURI__.core.invoke("set_close_action", { action: "tray" }).catch(() => { });
       }
       if (selectCloseAction) selectCloseAction.value = "tray";
     }
@@ -3802,7 +3833,7 @@ if (btnActionExitApp) {
   btnActionExitApp.addEventListener("click", async () => {
     if (chkCloseRemember && chkCloseRemember.checked) {
       if (window.__TAURI__ && window.__TAURI__.core) {
-        await window.__TAURI__.core.invoke("set_close_action", { action: "exit" }).catch(() => {});
+        await window.__TAURI__.core.invoke("set_close_action", { action: "exit" }).catch(() => { });
       }
       if (selectCloseAction) selectCloseAction.value = "exit";
     }
@@ -3848,7 +3879,7 @@ if (window.__TAURI__ && window.__TAURI__.event) {
     }
     try {
       localStorage.setItem("blewred_selected_monitor", idx.toString());
-    } catch (e) {}
+    } catch (e) { }
     if (typeof updateMonitorsDropdown === "function") {
       updateMonitorsDropdown(lastMonitorsList, idx);
     }
@@ -3863,7 +3894,7 @@ if (window.__TAURI__ && window.__TAURI__.event) {
     }
     try {
       localStorage.setItem("blewred_hud_monitor", idx.toString());
-    } catch (e) {}
+    } catch (e) { }
     if (typeof updateHudMonitorsDropdown === "function") {
       updateHudMonitorsDropdown(lastMonitorsList, idx);
     }
@@ -3958,7 +3989,7 @@ if (btnInstallRuOcr) {
     renderEventItem({
       type: "system",
       timestamp: new Date().toTimeString().split(" ")[0],
-      message: isEn 
+      message: isEn
         ? "[Windows OCR] Installation of WinRT OCR package requested. Confirm Administrator privileges in the system UAC dialog."
         : "[Windows OCR] Запрошена установка языкового пакета WinRT OCR. Подтвердите права Администратора в системном окне UAC."
     });
@@ -4060,7 +4091,7 @@ if (btnSaveHotkeys) {
       localStorage.setItem("blewred_hotkey_scope", currentHotkeyScope);
       localStorage.setItem("blewred_hotkey_panic", currentHotkeyPanic);
       localStorage.setItem("blewred_hotkey_threat", currentHotkeyThreat);
-    } catch (e) {}
+    } catch (e) { }
 
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({
@@ -4125,7 +4156,7 @@ function openModelsModal() {
     if (window.__TAURI__ && window.__TAURI__.core) {
       window.__TAURI__.core.invoke("check_models_status").then(res => {
         if (res) updateModelsStatusUI(res);
-      }).catch(() => {});
+      }).catch(() => { });
     }
   });
 }
@@ -4246,8 +4277,8 @@ function handleModelDownloadProgress(data) {
     downloadSpeedVal.textContent = isEn ? `${mbSpeed} MB/s` : `${mbSpeed} МБ/с`;
   }
   if (downloadEtaVal) {
-    downloadEtaVal.textContent = p.eta_seconds > 0 
-      ? (isEn ? `~${Math.round(p.eta_seconds)} sec` : `~${Math.round(p.eta_seconds)} сек`) 
+    downloadEtaVal.textContent = p.eta_seconds > 0
+      ? (isEn ? `~${Math.round(p.eta_seconds)} sec` : `~${Math.round(p.eta_seconds)} сек`)
       : (isEn ? "Completing..." : "Завершение...");
   }
 
@@ -4442,7 +4473,7 @@ function initSetupGuideVisibility(hideSetting) {
     } else if (hideSetting !== undefined) {
       userHide = !!hideSetting;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   if (chkHideSetupGuide) {
     chkHideSetupGuide.checked = userHide;
@@ -4468,7 +4499,7 @@ function initSetupGuideVisibility(hideSetting) {
         stepCardObs.classList.add("step-completed");
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // Recalculate completed steps count
   updateSetupGuideStatus({});
@@ -4519,11 +4550,11 @@ function updateSetupGuideStatus(data) {
   let extPreviouslyVerified = false;
   try {
     extPreviouslyVerified = localStorage.getItem("blewred_setup_ext_verified") === "true";
-  } catch (e) {}
+  } catch (e) { }
 
   if (badgeStepExt && stepCardExt) {
     if (extConn || extPreviouslyVerified) {
-      try { localStorage.setItem("blewred_setup_ext_verified", "true"); } catch (e) {}
+      try { localStorage.setItem("blewred_setup_ext_verified", "true"); } catch (e) { }
       badgeStepExt.className = "label label-success step-status-badge";
       badgeStepExt.textContent = extConn ? (isEn ? "Connected" : "Подключено") : (isEn ? "Ready (OK)" : "Готово (OK)");
       stepCardExt.classList.add("step-completed");
@@ -4539,12 +4570,12 @@ function updateSetupGuideStatus(data) {
   let obsPreviouslyVerified = false;
   try {
     obsPreviouslyVerified = localStorage.getItem("blewred_setup_obs_verified") === "true";
-  } catch (e) {}
+  } catch (e) { }
 
   if (badgeStepObs && stepCardObs) {
     if (obsConn || obsPreviouslyVerified) {
       if (obsConn) {
-        try { localStorage.setItem("blewred_setup_obs_verified", "true"); } catch (e) {}
+        try { localStorage.setItem("blewred_setup_obs_verified", "true"); } catch (e) { }
       }
       badgeStepObs.className = "label label-success step-status-badge";
       badgeStepObs.textContent = obsConn ? (isEn ? "Connected" : "Подключено") : (isEn ? "Ready (OK)" : "Готово (OK)");
@@ -4598,9 +4629,9 @@ if (chkHideSetupGuide) {
     const hide = e.target.checked;
     try {
       localStorage.setItem("blewred_hide_setup_guide", hide ? "true" : "false");
-    } catch (err) {}
+    } catch (err) { }
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("set_hide_setup_guide", { hide: hide }).catch(() => {});
+      window.__TAURI__.core.invoke("set_hide_setup_guide", { hide: hide }).catch(() => { });
     }
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "set_hide_setup_guide", hide: hide }));
@@ -4611,7 +4642,7 @@ if (chkHideSetupGuide) {
 if (btnOpenGraphicsSettings) {
   btnOpenGraphicsSettings.addEventListener("click", () => {
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("open_windows_graphics_settings").catch(() => {});
+      window.__TAURI__.core.invoke("open_windows_graphics_settings").catch(() => { });
     }
     renderEventItem({
       type: "system",
@@ -4624,7 +4655,7 @@ if (btnOpenGraphicsSettings) {
 if (btnOpenExtFolder) {
   btnOpenExtFolder.addEventListener("click", () => {
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("open_extension_folder").catch(() => {});
+      window.__TAURI__.core.invoke("open_extension_folder").catch(() => { });
     }
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "open_browser_extension_dir" }));
@@ -4646,7 +4677,7 @@ if (btnOpenModelsSetup) {
 if (btnOpenDocsGuide) {
   btnOpenDocsGuide.addEventListener("click", () => {
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("open_docs_guide").catch(() => {});
+      window.__TAURI__.core.invoke("open_docs_guide").catch(() => { });
     }
   });
 }
@@ -4694,10 +4725,10 @@ function openCuesModal() {
     if (window.__TAURI__ && window.__TAURI__.core) {
       window.__TAURI__.core.invoke("get_cues_config").then(cfg => {
         if (cfg) updateCuesConfigUI(cfg);
-      }).catch(() => {});
+      }).catch(() => { });
       window.__TAURI__.core.invoke("get_scheduled_cues").then(cues => {
         if (Array.isArray(cues)) renderCuesTable(cues);
-      }).catch(() => {});
+      }).catch(() => { });
     }
   });
 }
@@ -4747,8 +4778,8 @@ function updateCuesConfigUI(cfg) {
   if (cfg.auto_censor !== undefined && toggleCueAutocensor) {
     toggleCueAutocensor.checked = !!cfg.auto_censor;
     if (labelCueAutocensorStatus) {
-      labelCueAutocensorStatus.textContent = cfg.auto_censor 
-        ? (isEn ? "Enabled (OBS + sound)" : "Включена (OBS + звук)") 
+      labelCueAutocensorStatus.textContent = cfg.auto_censor
+        ? (isEn ? "Enabled (OBS + sound)" : "Включена (OBS + звук)")
         : (isEn ? "Disabled (HUD only)" : "Отключена (Только HUD)");
       labelCueAutocensorStatus.style.color = cfg.auto_censor ? "#38bdf8" : "#94a3b8";
     }
@@ -4805,8 +4836,8 @@ function formatDuration(sec) {
   if (s < 60) return isEn ? `${s}s` : `${s}с`;
   const m = Math.floor(s / 60);
   const rem = s % 60;
-  return rem > 0 
-    ? (isEn ? `${m}m ${rem}s` : `${m}м ${rem}с`) 
+  return rem > 0
+    ? (isEn ? `${m}m ${rem}s` : `${m}м ${rem}с`)
     : (isEn ? `${m}m` : `${m}м`);
 }
 
@@ -4880,7 +4911,7 @@ function renderCuesTable(cues) {
         socket.send(JSON.stringify({ type: "delete_scheduled_cue", id }));
       }
       if (window.__TAURI__ && window.__TAURI__.core) {
-        window.__TAURI__.core.invoke("delete_scheduled_cue", { id }).catch(() => {});
+        window.__TAURI__.core.invoke("delete_scheduled_cue", { id }).catch(() => { });
       }
     });
   });
@@ -4970,7 +5001,7 @@ function handleRecognizedCuesResult(data) {
       window.__TAURI__.core.invoke("add_scheduled_cues", { cues, append: isAppendCuesMode })
         .then(updated => {
           if (Array.isArray(updated)) renderCuesTable(updated);
-        }).catch(() => {});
+        }).catch(() => { });
     }
     renderEventItem({
       type: "success",
@@ -4981,7 +5012,7 @@ function handleRecognizedCuesResult(data) {
     renderEventItem({
       type: "warning",
       timestamp: new Date().toTimeString().split(" ")[0],
-      message: isEn 
+      message: isEn
         ? "[WinRT OCR] No cues found on image. Check screenshot clarity or enter manually."
         : "[WinRT OCR] Тайминги на изображении не найдены. Проверьте четкость скриншота или введите вручную."
     });
@@ -5059,7 +5090,7 @@ function parseManualText() {
       if (endSec > startSec) {
         const fallbackReason = isEn ? "Scheduled block" : "Запланированная блокировка";
         const reason = (match[7] || "").replace(/^[\s,;:-]+/, "").trim() || fallbackReason;
-        const fmt = `${String(Math.floor(startSec/60)).padStart(2,"0")}:${String(startSec%60).padStart(2,"0")} – ${String(Math.floor(endSec/60)).padStart(2,"0")}:${String(endSec%60).padStart(2,"0")}`;
+        const fmt = `${String(Math.floor(startSec / 60)).padStart(2, "0")}:${String(startSec % 60).padStart(2, "0")} – ${String(Math.floor(endSec / 60)).padStart(2, "0")}:${String(endSec % 60).padStart(2, "0")}`;
         parsedCues.push({
           id: `manual-${Date.now()}-${idx}`,
           start_sec: startSec,
@@ -5086,7 +5117,7 @@ function parseManualText() {
       window.__TAURI__.core.invoke("add_scheduled_cues", { cues: parsedCues, append: isAppendCuesMode })
         .then(updated => {
           if (Array.isArray(updated)) renderCuesTable(updated);
-        }).catch(() => {});
+        }).catch(() => { });
     }
     renderEventItem({
       type: "success",
@@ -5094,8 +5125,8 @@ function parseManualText() {
       message: isEn ? `[Parser] Recognized ${parsedCues.length} cues from text.` : `[Парсер] Распознано ${parsedCues.length} таймингов из текста.`
     });
   } else {
-    alert(isEn 
-      ? "Could not recognize timecodes. Specify interval in MM:SS-MM:SS format (e.g. 12:30-14:15)" 
+    alert(isEn
+      ? "Could not recognize timecodes. Specify interval in MM:SS-MM:SS format (e.g. 12:30-14:15)"
       : "Не удалось распознать таймкоды. Укажите интервал в формате MM:SS-MM:SS (например 12:30-14:15)");
   }
 }
@@ -5120,7 +5151,7 @@ function saveCuesConfig(partial) {
       autoCensor: cfg.auto_censor,
       cueNotifications: cfg.cue_notifications,
       appendMode: cfg.append_mode
-    }).catch(() => {});
+    }).catch(() => { });
   }
 }
 
@@ -5263,12 +5294,12 @@ if (btnCueParseManualText) {
 if (btnClearAllCues) {
   btnClearAllCues.addEventListener("click", () => {
     const _isEnClr = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
-  if (!confirm(_isEnClr ? "Clear all scheduled timings?" : "Очистить все запланированные тайминги?")) return;
+    if (!confirm(_isEnClr ? "Clear all scheduled timings?" : "Очистить все запланированные тайминги?")) return;
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "clear_scheduled_cues" }));
     }
     if (window.__TAURI__ && window.__TAURI__.core) {
-      window.__TAURI__.core.invoke("clear_scheduled_cues").catch(() => {});
+      window.__TAURI__.core.invoke("clear_scheduled_cues").catch(() => { });
     }
     renderCuesTable([]);
   });
@@ -5284,8 +5315,484 @@ document.addEventListener("keydown", (e) => {
     if (modalBrowserExtension && modalBrowserExtension.classList.contains("in")) closeExtensionModal();
     if (modalCuesManager && modalCuesManager.classList.contains("in")) closeCuesModal();
     if (modalObsSetupPrompt && modalObsSetupPrompt.classList.contains("in")) closeObsSetupPrompt();
+    if (typeof modalModelTuning !== "undefined" && modalModelTuning && modalModelTuning.classList.contains("in")) closeModelTuningModal();
   }
 });
+
+// =============================================================================
+// MODEL TUNING & PROFILES CONTROLLER (Bootstrap 3 Dark Edition)
+// =============================================================================
+let availableModelProfiles = [
+  {
+    name: "Gaming",
+    profile: "gaming",
+    exact_rules: "preset:gaming,vit_filter:on,min_conf:0.38,hold:12",
+    vit_game_filter: true,
+    nudenet_min_confidence: 0.38,
+    tracker_hold_frames: 12,
+    is_preset: true
+  },
+  {
+    name: "RealLife",
+    profile: "reallife",
+    exact_rules: "preset:reallife,vit_filter:off,min_conf:0.25,hold:25",
+    vit_game_filter: false,
+    nudenet_min_confidence: 0.25,
+    tracker_hold_frames: 25,
+    is_preset: true
+  },
+  {
+    name: "Strict",
+    profile: "strict",
+    exact_rules: "preset:strict,vit_filter:off,min_conf:0.15,hold:30",
+    vit_game_filter: false,
+    nudenet_min_confidence: 0.15,
+    tracker_hold_frames: 30,
+    is_preset: true
+  }
+];
+let activeModelProfileName = "Gaming";
+let activeModelTuning = Object.assign({}, availableModelProfiles[0]);
+
+const modalModelTuning = document.getElementById("modal-model-tuning");
+const modalModelTuningBackdrop = document.getElementById("modal-model-tuning-backdrop");
+const btnOpenTuningFromCascade = document.getElementById("btn-open-tuning-from-cascade");
+const btnCloseModelTuningX = document.getElementById("btn-close-model-tuning-x");
+const btnCloseModelTuning = document.getElementById("btn-close-model-tuning");
+
+const modelProfileSelect = document.getElementById("model-profile-select");
+const btnDeleteModelProfile = document.getElementById("btn-delete-model-profile");
+const btnOpenProfilesFolder = document.getElementById("btn-open-profiles-folder");
+const modelProfileDesc = document.getElementById("model-profile-desc");
+
+const toggleTuningVitFilter = document.getElementById("toggle-tuning-vit-filter");
+const sliderTuningNudenetCutoff = document.getElementById("slider-tuning-nudenet-cutoff");
+const valTuningNudenetCutoff = document.getElementById("val-tuning-nudenet-cutoff");
+const sliderTuningTrackerHold = document.getElementById("slider-tuning-tracker-hold");
+const valTuningTrackerHold = document.getElementById("val-tuning-tracker-hold");
+const inputTuningExactRule = document.getElementById("input-tuning-exact-rule");
+const tuningRuleStatus = document.getElementById("tuning-rule-status");
+const btnApplyTuningRule = document.getElementById("btn-apply-tuning-rule");
+
+const inputSaveProfileName = document.getElementById("input-save-profile-name");
+const btnSaveModelProfile = document.getElementById("btn-save-model-profile");
+
+function isProtectedModelPreset(name) {
+  if (!name) return false;
+  const n = name.trim().toLowerCase();
+  return n === "gaming" || n === "reallife" || n === "strict" || n === "irl";
+}
+
+function openModelTuningModal() {
+  if (modalModelTuning && modalModelTuningBackdrop) {
+    modalModelTuning.style.display = "block";
+    modalModelTuningBackdrop.style.display = "block";
+    setTimeout(() => {
+      modalModelTuning.classList.add("in");
+      modalModelTuningBackdrop.classList.add("in");
+    }, 10);
+  }
+}
+
+function closeModelTuningModal() {
+  if (modalModelTuning && modalModelTuningBackdrop) {
+    modalModelTuning.classList.remove("in");
+    modalModelTuningBackdrop.classList.remove("in");
+    setTimeout(() => {
+      modalModelTuning.style.display = "none";
+      modalModelTuningBackdrop.style.display = "none";
+    }, 150);
+  }
+}
+
+if (btnOpenTuningFromCascade) {
+  btnOpenTuningFromCascade.addEventListener("click", openModelTuningModal);
+}
+if (btnCloseModelTuningX) {
+  btnCloseModelTuningX.addEventListener("click", closeModelTuningModal);
+}
+if (btnCloseModelTuning) {
+  btnCloseModelTuning.addEventListener("click", closeModelTuningModal);
+}
+if (modalModelTuning) {
+  modalModelTuning.addEventListener("click", (e) => {
+    if (e.target === modalModelTuning) closeModelTuningModal();
+  });
+}
+
+function updateModelProfilesList(profiles, activeName) {
+  if (Array.isArray(profiles) && profiles.length > 0) {
+    availableModelProfiles = profiles;
+  }
+  if (activeName) {
+    activeModelProfileName = activeName;
+  }
+  renderModelProfilesDropdown();
+}
+
+function renderModelProfilesDropdown() {
+  if (!modelProfileSelect) return;
+  const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
+
+  modelProfileSelect.innerHTML = "";
+
+  availableModelProfiles.forEach((prof) => {
+    const opt = document.createElement("option");
+    opt.value = prof.name;
+    const lower = prof.name.toLowerCase();
+
+    let displayLabel = prof.name;
+    if (lower === "gaming") {
+      displayLabel = isEn ? "Gaming / 3D & Anime (Preset)" : "Игры / 3D & Аниме (Пресет)";
+    } else if (lower === "reallife" || lower === "irl") {
+      displayLabel = isEn ? "Real Life / IRL (Preset)" : "Реальный контент / IRL (Пресет)";
+    } else if (lower === "strict") {
+      displayLabel = isEn ? "Strict / Paranoia (Preset)" : "Макс. защита (Пресет)";
+    } else {
+      displayLabel = `${prof.name} (${isEn ? "Custom" : "Пользовательский"})`;
+    }
+
+    opt.textContent = displayLabel;
+    if (prof.name.toLowerCase() === activeModelProfileName.toLowerCase()) {
+      opt.selected = true;
+    }
+    modelProfileSelect.appendChild(opt);
+  });
+
+  updateProfileActionsState();
+}
+
+function updateProfileActionsState() {
+  const isProtected = isProtectedModelPreset(activeModelProfileName);
+  const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
+
+  if (btnDeleteModelProfile) {
+    if (isProtected) {
+      btnDeleteModelProfile.disabled = true;
+      btnDeleteModelProfile.style.opacity = "0.45";
+      btnDeleteModelProfile.style.cursor = "not-allowed";
+    } else {
+      btnDeleteModelProfile.disabled = false;
+      btnDeleteModelProfile.style.opacity = "1.0";
+      btnDeleteModelProfile.style.cursor = "pointer";
+    }
+  }
+
+  if (modelProfileDesc) {
+    const lower = activeModelProfileName.toLowerCase();
+    if (lower === "gaming") {
+      modelProfileDesc.textContent = isEn
+        ? "Gaming mode: active ViT cel-shading filter, minimum 0.38 NudeNet cutoff, and 12-frame retention to eliminate false positives on 3D textures, avatar skins, and polygon shadows."
+        : "Игровой режим: фильтр 3D/аниме в ViT, порог 0.38 в NudeNet и 12 кадров удержания для исключения ложных срабатываний на текстуры скинов и тени полигонов.";
+    } else if (lower === "reallife" || lower === "irl") {
+      modelProfileDesc.textContent = isEn
+        ? "Real-life mode: balanced IRL human anatomy detection with 0.25 threshold and 25-frame retention for live webcams."
+        : "Реальный контент: сбалансированная детекция анатомии человека (порог 0.25, удержание 25 кадров) для вебкамер и IRL-стримов.";
+    } else if (lower === "strict") {
+      modelProfileDesc.textContent = isEn
+        ? "Strict paranoia mode: maximum sensitivity (0.15 cutoff, 30-frame hold) with zero tolerance for exposed skin."
+        : "Строгий режим: максимальная чувствительность детектора (порог 0.15, удержание 30 кадров) при малейшем подозрении.";
+    } else {
+      modelProfileDesc.textContent = isEn
+        ? `Custom saved profile "${activeModelProfileName}". Your fine-tuned thresholds and filters are active.`
+        : `Пользовательский профиль «${activeModelProfileName}». Активны ваши персональные пороги и настройки.`;
+    }
+  }
+}
+
+function applyModelTuningToUI(tuning, profileName) {
+  if (!tuning) return;
+  activeModelTuning = Object.assign({}, activeModelTuning, tuning);
+  if (profileName) {
+    activeModelProfileName = profileName;
+  } else if (tuning.name) {
+    activeModelProfileName = tuning.name;
+  }
+
+  if (toggleTuningVitFilter) {
+    toggleTuningVitFilter.checked = !!activeModelTuning.vit_game_filter;
+  }
+  if (sliderTuningNudenetCutoff && valTuningNudenetCutoff) {
+    const conf = typeof activeModelTuning.nudenet_min_confidence === "number" ? activeModelTuning.nudenet_min_confidence : 0.38;
+    sliderTuningNudenetCutoff.value = conf.toFixed(2);
+    valTuningNudenetCutoff.textContent = conf.toFixed(2);
+  }
+  if (sliderTuningTrackerHold && valTuningTrackerHold) {
+    const hold = activeModelTuning.tracker_hold_frames || 12;
+    sliderTuningTrackerHold.value = hold;
+    valTuningTrackerHold.textContent = hold;
+  }
+  if (inputTuningExactRule) {
+    inputTuningExactRule.value = activeModelTuning.exact_rules || buildExactRuleString();
+  }
+  if (tuningRuleStatus) {
+    const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
+    tuningRuleStatus.textContent = isEn ? "Synchronized" : "Синхронизировано";
+    tuningRuleStatus.className = "label label-info";
+  }
+
+  renderModelProfilesDropdown();
+}
+
+function buildExactRuleString() {
+  const pName = activeModelProfileName ? activeModelProfileName.toLowerCase() : "gaming";
+  const vf = toggleTuningVitFilter && toggleTuningVitFilter.checked ? "on" : "off";
+  const mc = sliderTuningNudenetCutoff ? parseFloat(sliderTuningNudenetCutoff.value).toFixed(2) : "0.38";
+  const hd = sliderTuningTrackerHold ? parseInt(sliderTuningTrackerHold.value, 10) : 12;
+  return `preset:${pName},vit_filter:${vf},min_conf:${mc},hold:${hd}`;
+}
+
+function notifyModelTuningChanged() {
+  const vit = toggleTuningVitFilter ? toggleTuningVitFilter.checked : true;
+  const nudenetConf = sliderTuningNudenetCutoff ? parseFloat(sliderTuningNudenetCutoff.value) : 0.38;
+  const holdFrames = sliderTuningTrackerHold ? parseInt(sliderTuningTrackerHold.value, 10) : 12;
+  const exactRule = buildExactRuleString();
+
+  if (inputTuningExactRule) {
+    inputTuningExactRule.value = exactRule;
+  }
+  if (tuningRuleStatus) {
+    const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
+    tuningRuleStatus.textContent = isEn ? "Custom Modified" : "Пользовательские";
+    tuningRuleStatus.className = "label label-warning";
+  }
+
+  activeModelTuning = {
+    name: activeModelProfileName,
+    profile: isProtectedModelPreset(activeModelProfileName) ? activeModelProfileName.toLowerCase() : "custom",
+    exact_rules: exactRule,
+    vit_game_filter: vit,
+    nudenet_min_confidence: nudenetConf,
+    tracker_hold_frames: holdFrames,
+    is_preset: isProtectedModelPreset(activeModelProfileName)
+  };
+
+  if (window.__TAURI__ && window.__TAURI__.core) {
+    window.__TAURI__.core.invoke("set_model_tuning", { tuning: activeModelTuning }).catch(() => {});
+  }
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "set_model_tuning", tuning: activeModelTuning }));
+  }
+}
+
+if (modelProfileSelect) {
+  modelProfileSelect.addEventListener("change", (e) => {
+    const selectedName = e.target.value;
+    activeModelProfileName = selectedName;
+    const found = availableModelProfiles.find(p => p.name.toLowerCase() === selectedName.toLowerCase());
+    if (found) {
+      applyModelTuningToUI(found, selectedName);
+      if (window.__TAURI__ && window.__TAURI__.core) {
+        window.__TAURI__.core.invoke("set_model_tuning", { tuning: found }).catch(() => {});
+      }
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: "set_model_tuning", tuning: found }));
+      }
+    }
+    updateProfileActionsState();
+  });
+}
+
+if (toggleTuningVitFilter) {
+  toggleTuningVitFilter.addEventListener("change", notifyModelTuningChanged);
+}
+
+if (sliderTuningNudenetCutoff) {
+  sliderTuningNudenetCutoff.addEventListener("input", (e) => {
+    if (valTuningNudenetCutoff) valTuningNudenetCutoff.textContent = parseFloat(e.target.value).toFixed(2);
+    notifyModelTuningChanged();
+  });
+}
+
+if (sliderTuningTrackerHold) {
+  sliderTuningTrackerHold.addEventListener("input", (e) => {
+    if (valTuningTrackerHold) valTuningTrackerHold.textContent = e.target.value;
+    notifyModelTuningChanged();
+  });
+}
+
+if (btnApplyTuningRule) {
+  btnApplyTuningRule.addEventListener("click", () => {
+    const ruleStr = inputTuningExactRule ? inputTuningExactRule.value.trim() : "";
+    if (!ruleStr) return;
+
+    // Parse rule string: preset:gaming,vit_filter:on,min_conf:0.38,hold:12
+    const parts = ruleStr.split(",");
+    parts.forEach(part => {
+      const kv = part.split(":");
+      if (kv.length === 2) {
+        const k = kv[0].trim().toLowerCase();
+        const v = kv[1].trim().toLowerCase();
+        if (k === "vit_filter" && toggleTuningVitFilter) {
+          toggleTuningVitFilter.checked = (v === "on" || v === "true" || v === "1");
+        } else if (k === "min_conf" && sliderTuningNudenetCutoff) {
+          const num = parseFloat(v);
+          if (!isNaN(num)) {
+            sliderTuningNudenetCutoff.value = num.toFixed(2);
+            if (valTuningNudenetCutoff) valTuningNudenetCutoff.textContent = num.toFixed(2);
+          }
+        } else if (k === "hold" && sliderTuningTrackerHold) {
+          const num = parseInt(v, 10);
+          if (!isNaN(num)) {
+            sliderTuningTrackerHold.value = num;
+            if (valTuningTrackerHold) valTuningTrackerHold.textContent = num;
+          }
+        }
+      }
+    });
+
+    notifyModelTuningChanged();
+    const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
+    if (typeof showToast === "function") {
+      showToast(isEn ? "Model rules applied" : "Правила моделей обновлены");
+    }
+  });
+}
+
+// Save New Profile Action
+async function handleSaveNewModelProfile() {
+  const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
+  const name = inputSaveProfileName ? inputSaveProfileName.value.trim() : "";
+  if (!name) {
+    if (typeof showToast === "function") {
+      showToast(isEn ? "Enter a profile name" : "Введите название профиля");
+    } else {
+      alert(isEn ? "Enter a profile name" : "Введите название профиля");
+    }
+    return;
+  }
+
+  if (isProtectedModelPreset(name)) {
+    const msg = isEn
+      ? "Built-in presets Gaming, RealLife, and Strict cannot be overwritten"
+      : "Встроенные пресеты Gaming, RealLife и Strict нельзя перезаписать";
+    if (typeof showToast === "function") {
+      showToast(msg);
+    } else {
+      alert(msg);
+    }
+    return;
+  }
+
+  const vit = toggleTuningVitFilter ? toggleTuningVitFilter.checked : true;
+  const nudenetConf = sliderTuningNudenetCutoff ? parseFloat(sliderTuningNudenetCutoff.value) : 0.38;
+  const holdFrames = sliderTuningTrackerHold ? parseInt(sliderTuningTrackerHold.value, 10) : 12;
+  const ruleStr = `preset:${name.toLowerCase()},vit_filter:${vit ? "on" : "off"},min_conf:${nudenetConf.toFixed(2)},hold:${holdFrames}`;
+
+  const newProfile = {
+    name: name,
+    profile: "custom",
+    exact_rules: ruleStr,
+    vit_game_filter: vit,
+    nudenet_min_confidence: nudenetConf,
+    tracker_hold_frames: holdFrames,
+    is_preset: false
+  };
+
+  try {
+    if (window.__TAURI__ && window.__TAURI__.core) {
+      const updatedList = await window.__TAURI__.core.invoke("save_model_profile", { profile: newProfile });
+      if (Array.isArray(updatedList)) {
+        availableModelProfiles = updatedList;
+      }
+    }
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "save_model_profile", profile: newProfile }));
+    }
+
+    activeModelProfileName = name;
+    activeModelTuning = newProfile;
+    if (inputSaveProfileName) inputSaveProfileName.value = "";
+
+    renderModelProfilesDropdown();
+    updateProfileActionsState();
+
+    const savedMsg = isEn ? `Profile "${name}" saved successfully` : `Профиль «${name}» успешно сохранен`;
+    if (typeof showToast === "function") {
+      showToast(savedMsg);
+    }
+  } catch (err) {
+    console.error("[Tuning] Failed to save profile:", err);
+    alert(isEn ? `Failed to save profile: ${err}` : `Ошибка сохранения профиля: ${err}`);
+  }
+}
+
+if (btnSaveModelProfile) {
+  btnSaveModelProfile.addEventListener("click", handleSaveNewModelProfile);
+}
+
+if (inputSaveProfileName) {
+  inputSaveProfileName.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSaveNewModelProfile();
+    }
+  });
+}
+
+// Delete Profile Action
+async function handleDeleteModelProfile() {
+  const isEn = (window.I18N && window.I18N.getLanguage() === "en") || (typeof currentLanguage !== "undefined" && currentLanguage === "en");
+  if (isProtectedModelPreset(activeModelProfileName)) {
+    const msg = isEn
+      ? "Built-in presets Gaming, RealLife, and Strict cannot be deleted"
+      : "Встроенные пресеты Gaming, RealLife и Strict нельзя удалить";
+    if (typeof showToast === "function") showToast(msg);
+    return;
+  }
+
+  const confirmMsg = isEn
+    ? `Delete saved profile "${activeModelProfileName}"?`
+    : `Удалить сохраненный профиль «${activeModelProfileName}»?`;
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const deletingName = activeModelProfileName;
+    if (window.__TAURI__ && window.__TAURI__.core) {
+      const updatedList = await window.__TAURI__.core.invoke("delete_model_profile", { name: deletingName });
+      if (Array.isArray(updatedList)) {
+        availableModelProfiles = updatedList;
+      }
+    }
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "delete_model_profile", name: deletingName }));
+    }
+
+    activeModelProfileName = "Gaming";
+    const gaming = availableModelProfiles.find(p => p.name.toLowerCase() === "gaming");
+    if (gaming) {
+      applyModelTuningToUI(gaming, "Gaming");
+    } else {
+      renderModelProfilesDropdown();
+    }
+
+    if (typeof showToast === "function") {
+      showToast(isEn ? "Profile deleted" : "Профиль удален");
+    }
+  } catch (err) {
+    console.error("[Tuning] Failed to delete profile:", err);
+  }
+}
+
+if (btnDeleteModelProfile) {
+  btnDeleteModelProfile.addEventListener("click", handleDeleteModelProfile);
+}
+
+// Open Profiles Folder in Explorer
+function handleOpenProfilesFolder() {
+  if (window.__TAURI__ && window.__TAURI__.core) {
+    window.__TAURI__.core.invoke("open_profiles_folder").catch((err) => {
+      console.error("[Tuning] Failed to open profiles folder:", err);
+    });
+  }
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "open_profiles_folder" }));
+  }
+}
+
+if (btnOpenProfilesFolder) {
+  btnOpenProfilesFolder.addEventListener("click", handleOpenProfilesFolder);
+}
 
 // ==============================================================================
 // BILINGUAL LOCALIZATION SYSTEM (RU / EN)
@@ -5296,7 +5803,7 @@ function setLanguage(lang) {
   currentLanguage = (lang === "en") ? "en" : "ru";
   try {
     localStorage.setItem("blewred_lang", currentLanguage);
-  } catch (e) {}
+  } catch (e) { }
   document.documentElement.lang = currentLanguage;
 
   if (window.I18N) {
@@ -5310,7 +5817,7 @@ function setLanguage(lang) {
     socket.send(JSON.stringify({ type: "set_language", language: currentLanguage }));
   }
   if (window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.core.invoke === "function") {
-    window.__TAURI__.core.invoke("set_language", { language: currentLanguage }).catch(() => {});
+    window.__TAURI__.core.invoke("set_language", { language: currentLanguage }).catch(() => { });
   }
 
   // Update Toolbar Language Switcher button states
@@ -5339,37 +5846,37 @@ function setLanguage(lang) {
   // 2. Streamer Setup Guide panel
   const guideTitle = document.querySelector(".setup-guide-title");
   if (guideTitle) guideTitle.textContent = isEn ? "Streamer Quick Start: Recommended Setup Steps" : "Быстрый старт стримера: Рекомендуемые шаги настройки";
-  
-  const step1Title = document.querySelector("#step-card-gpu .step-title"); 
+
+  const step1Title = document.querySelector("#step-card-gpu .step-title");
   if (step1Title) step1Title.textContent = isEn ? "GPU Hardware Acceleration (DirectML)" : "Аппаратное ускорение GPU (DirectML)";
-  const step1Sub = document.querySelector("#step-card-gpu .step-subtitle"); 
+  const step1Sub = document.querySelector("#step-card-gpu .step-subtitle");
   if (step1Sub) step1Sub.textContent = isEn ? "DirectML hardware acceleration (8–14 ms)" : "DirectML аппаратное ускорение (8–14 мс)";
   const bGraph = document.getElementById("btn-open-graphics-settings");
   if (bGraph) {
     bGraph.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 3px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> ${isEn ? "Windows Graphics Settings" : "Настройки графики Windows"}`;
   }
 
-  const step2Title = document.querySelector("#step-card-models .step-title"); 
+  const step2Title = document.querySelector("#step-card-models .step-title");
   if (step2Title) step2Title.textContent = isEn ? "AI Neural Network Models" : "Модели нейросетей";
-  const step2Sub = document.querySelector("#step-card-models .step-subtitle"); 
+  const step2Sub = document.querySelector("#step-card-models .step-subtitle");
   if (step2Sub) step2Sub.textContent = isEn ? "ViT screener + NudeNet 640m localizer" : "ViT скринер + NudeNet 640m локализатор";
   const bMod = document.getElementById("btn-open-models-setup");
   if (bMod) {
     bMod.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 3px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ${isEn ? "Download Models" : "Загрузка моделей"}`;
   }
 
-  const step3Title = document.querySelector("#step-card-ext .step-title"); 
+  const step3Title = document.querySelector("#step-card-ext .step-title");
   if (step3Title) step3Title.textContent = isEn ? "Browser Extension" : "Браузерное расширение";
-  const step3Sub = document.querySelector("#step-card-ext .step-subtitle"); 
+  const step3Sub = document.querySelector("#step-card-ext .step-subtitle");
   if (step3Sub) step3Sub.textContent = isEn ? "Player timeline sync and timings" : "Синхронизация таймлайна плеера и таймингов";
   const bExt = document.getElementById("btn-open-ext-folder");
   if (bExt) {
     bExt.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 3px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> ${isEn ? "Open Extension Folder" : "Открыть папку расширения"}`;
   }
 
-  const step4Title = document.querySelector("#step-card-obs .step-title"); 
+  const step4Title = document.querySelector("#step-card-obs .step-title");
   if (step4Title) step4Title.textContent = isEn ? "OBS Studio Integration" : "Связка с OBS Studio";
-  const step4Sub = document.querySelector("#step-card-obs .step-subtitle"); 
+  const step4Sub = document.querySelector("#step-card-obs .step-subtitle");
   if (step4Sub) step4Sub.textContent = isEn ? "Hardware shader filter & Shield overlay" : "Аппаратный шейдерный фильтр & Заставка Shield";
   const bObsSetup = document.getElementById("btn-trigger-obs-setup");
   if (bObsSetup) {
@@ -5527,6 +6034,9 @@ function setLanguage(lang) {
   const btnConfirmDisable = document.getElementById("btn-confirm-disable-support"); if (btnConfirmDisable) btnConfirmDisable.textContent = isEn ? "Yes" : "Да";
 
   // 9. Synchronize other stateful components
+  if (typeof renderModelProfilesDropdown === "function") {
+    renderModelProfilesDropdown();
+  }
   if (typeof updateSetupGuideStatus === "function") {
     updateSetupGuideStatus(lastSetupGuideData || {});
   }
@@ -5543,12 +6053,12 @@ function setLanguage(lang) {
     updateOcrStateUI(isOcrEnabled);
   }
   if (labelCueAutocensorStatus && toggleCueAutocensor) {
-    labelCueAutocensorStatus.textContent = toggleCueAutocensor.checked 
+    labelCueAutocensorStatus.textContent = toggleCueAutocensor.checked
       ? (isEn ? "Enabled (OBS + Audio)" : "Включена (OBS + звук)")
       : (isEn ? "Disabled (HUD Only)" : "Отключена (Только HUD)");
   }
   if (labelCueNotificationsStatus && toggleCueNotifications) {
-    labelCueNotificationsStatus.textContent = toggleCueNotifications.checked 
+    labelCueNotificationsStatus.textContent = toggleCueNotifications.checked
       ? (isEn ? "Enabled (HUD)" : "Включены (HUD)")
       : (isEn ? "Disabled" : "Отключены");
     labelCueNotificationsStatus.style.color = toggleCueNotifications.checked ? "#38bdf8" : "#94a3b8";

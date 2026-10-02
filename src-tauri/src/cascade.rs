@@ -7,8 +7,8 @@ use ort::{session::Session, value::Value};
 use serde::{Deserialize, Serialize};
 
 use crate::vision::{
-    is_explicit_nudenet_class, is_suggestive_nudenet_class, nudenet_class_label,
-    run_nudenet_nms, RawBox,
+    is_explicit_nudenet_class, is_suggestive_nudenet_class, nudenet_class_label, run_nudenet_nms,
+    RawBox,
 };
 
 pub const VIT_INPUT_SIZE: usize = 224;
@@ -48,6 +48,74 @@ impl CensorCategories {
             5 | 7 | 8 | 9 | 10 | 11 | 13 => self.body_exposed,
             _ => false,
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ModelProfile {
+    pub name: String,
+    pub profile: String,
+    pub exact_rules: String,
+    pub vit_game_filter: bool,
+    pub nudenet_min_confidence: f32,
+    pub tracker_hold_frames: u32,
+    pub is_preset: bool,
+}
+
+impl ModelProfile {
+    pub fn is_protected_preset(name: &str) -> bool {
+        let n = name.trim().to_lowercase();
+        n == "gaming" || n == "reallife" || n == "strict" || n == "irl"
+    }
+
+    pub fn gaming_preset() -> Self {
+        Self {
+            name: "Gaming".to_string(),
+            profile: "gaming".to_string(),
+            exact_rules: "preset:gaming,vit_filter:on,min_conf:0.38,hold:12".to_string(),
+            vit_game_filter: true,
+            nudenet_min_confidence: 0.38,
+            tracker_hold_frames: 12,
+            is_preset: true,
+        }
+    }
+
+    pub fn reallife_preset() -> Self {
+        Self {
+            name: "RealLife".to_string(),
+            profile: "reallife".to_string(),
+            exact_rules: "preset:reallife,vit_filter:off,min_conf:0.25,hold:25".to_string(),
+            vit_game_filter: false,
+            nudenet_min_confidence: 0.25,
+            tracker_hold_frames: 25,
+            is_preset: true,
+        }
+    }
+
+    pub fn strict_preset() -> Self {
+        Self {
+            name: "Strict".to_string(),
+            profile: "strict".to_string(),
+            exact_rules: "preset:strict,vit_filter:off,min_conf:0.15,hold:30".to_string(),
+            vit_game_filter: false,
+            nudenet_min_confidence: 0.15,
+            tracker_hold_frames: 30,
+            is_preset: true,
+        }
+    }
+
+    pub fn builtin_presets() -> Vec<Self> {
+        vec![
+            Self::gaming_preset(),
+            Self::reallife_preset(),
+            Self::strict_preset(),
+        ]
+    }
+}
+
+impl Default for ModelProfile {
+    fn default() -> Self {
+        Self::gaming_preset()
     }
 }
 
@@ -102,7 +170,13 @@ struct BlewRedShmHeader {
 #[link(name = "kernel32")]
 extern "system" {
     fn OpenFileMappingW(desired_access: u32, inherit_handle: i32, name: *const u16) -> isize;
-    fn MapViewOfFile(handle: isize, desired_access: u32, offset_high: u32, offset_low: u32, num_bytes: usize) -> *mut u8;
+    fn MapViewOfFile(
+        handle: isize,
+        desired_access: u32,
+        offset_high: u32,
+        offset_low: u32,
+        num_bytes: usize,
+    ) -> *mut u8;
     fn UnmapViewOfFile(addr: *const u8) -> i32;
     fn CloseHandle(handle: isize) -> i32;
 }
@@ -138,7 +212,9 @@ impl ObsShmReader {
                     if !ptr.is_null() {
                         self.handle = h;
                         self.mapped_ptr = ptr;
-                        println!("[ObsShmReader] Connected to OBS video source Shared Memory stream!");
+                        println!(
+                            "[ObsShmReader] Connected to OBS video source Shared Memory stream!"
+                        );
                     } else {
                         CloseHandle(h);
                         return None;
@@ -212,6 +288,7 @@ pub struct CascadeEngine {
     categories: Mutex<CensorCategories>,
     tracker: Mutex<crate::tracker::ZeroMissTracker>,
     boost_mode: AtomicBool,
+    model_tuning: Mutex<ModelProfile>,
 }
 
 impl CascadeEngine {
@@ -224,11 +301,17 @@ impl CascadeEngine {
         let udp = match UdpSocket::bind(&bind_addr) {
             Ok(sock) => {
                 let _ = sock.set_nonblocking(true);
-                println!("[CascadeEngine] Bound UDP sync & heartbeat socket on {}", bind_addr);
+                println!(
+                    "[CascadeEngine] Bound UDP sync & heartbeat socket on {}",
+                    bind_addr
+                );
                 Some(sock)
             }
             Err(e) => {
-                eprintln!("[CascadeEngine] Warning: Failed to bind UDP on {}: {:?}", bind_addr, e);
+                eprintln!(
+                    "[CascadeEngine] Warning: Failed to bind UDP on {}: {:?}",
+                    bind_addr, e
+                );
                 None
             }
         };
@@ -243,8 +326,11 @@ impl CascadeEngine {
             active_tracking_frames: AtomicU32::new(0),
             shm_reader: Mutex::new(ObsShmReader::new()),
             categories: Mutex::new(CensorCategories::default()),
-            tracker: Mutex::new(crate::tracker::ZeroMissTracker::new(crate::tracker::TrackerConfig::default())),
+            tracker: Mutex::new(crate::tracker::ZeroMissTracker::new(
+                crate::tracker::TrackerConfig::default(),
+            )),
             boost_mode: AtomicBool::new(false),
+            model_tuning: Mutex::new(ModelProfile::default()),
         };
 
         // Automatic instant GPU warm-up: compiles DirectML compute shaders and pre-allocates VRAM
@@ -265,11 +351,16 @@ impl CascadeEngine {
             if let Some(ref mut session) = *lock {
                 let dummy_vit = vec![0.0f32; 1 * 3 * VIT_INPUT_SIZE * VIT_INPUT_SIZE];
                 for _ in 0..2 {
-                    if let Ok(val) = Value::from_array(([1, 3, VIT_INPUT_SIZE, VIT_INPUT_SIZE], dummy_vit.clone())) {
+                    if let Ok(val) = Value::from_array((
+                        [1, 3, VIT_INPUT_SIZE, VIT_INPUT_SIZE],
+                        dummy_vit.clone(),
+                    )) {
                         let _ = session.run(ort::inputs![val]);
                     }
                 }
-                println!("[CascadeEngine] Stage 1 (ViT 224x224) GPU pipeline warmed up successfully.");
+                println!(
+                    "[CascadeEngine] Stage 1 (ViT 224x224) GPU pipeline warmed up successfully."
+                );
             }
         }
 
@@ -278,7 +369,10 @@ impl CascadeEngine {
             if let Some(ref mut session) = *lock {
                 let dummy_nude = vec![0.0f32; 1 * 3 * NUDENET_INPUT_SIZE * NUDENET_INPUT_SIZE];
                 for _ in 0..2 {
-                    if let Ok(val) = Value::from_array(([1, 3, NUDENET_INPUT_SIZE, NUDENET_INPUT_SIZE], dummy_nude.clone())) {
+                    if let Ok(val) = Value::from_array((
+                        [1, 3, NUDENET_INPUT_SIZE, NUDENET_INPUT_SIZE],
+                        dummy_nude.clone(),
+                    )) {
                         let _ = session.run(ort::inputs![val]);
                     }
                 }
@@ -297,7 +391,10 @@ impl CascadeEngine {
 
     pub fn set_boost_mode(&self, boosted: bool) {
         self.boost_mode.store(boosted, Ordering::Relaxed);
-        println!("[CascadeEngine] Neural Cascade Scan Mode updated: Boosted (Direct Dual-Scan) = {}", boosted);
+        println!(
+            "[CascadeEngine] Neural Cascade Scan Mode updated: Boosted (Direct Dual-Scan) = {}",
+            boosted
+        );
     }
 
     pub fn is_boost_mode(&self) -> bool {
@@ -326,6 +423,19 @@ impl CascadeEngine {
         }
     }
 
+    pub fn get_model_tuning(&self) -> ModelProfile {
+        self.model_tuning.lock().map(|m| m.clone()).unwrap_or_default()
+    }
+
+    pub fn set_model_tuning(&self, tuning: ModelProfile) {
+        if let Ok(mut trk) = self.tracker.lock() {
+            trk.set_max_age(tuning.tracker_hold_frames);
+        }
+        if let Ok(mut lock) = self.model_tuning.lock() {
+            *lock = tuning;
+        }
+    }
+
     pub fn try_read_obs_frame(&self) -> Option<(u32, u32, Vec<u8>)> {
         if let Ok(mut reader) = self.shm_reader.lock() {
             reader.try_read_frame()
@@ -348,7 +458,10 @@ impl CascadeEngine {
 
             match build_dml() {
                 Ok(s) => {
-                    println!("[CascadeEngine] {} ACTIVE WITH DIRECTML (GPU ACCELERATED) from: {:?}", title, path);
+                    println!(
+                        "[CascadeEngine] {} ACTIVE WITH DIRECTML (GPU ACCELERATED) from: {:?}",
+                        title, path
+                    );
                     Some(s)
                 }
                 Err(dml_err) => {
@@ -360,25 +473,42 @@ impl CascadeEngine {
                     };
                     match build_cpu() {
                         Ok(s) => {
-                            println!("[CascadeEngine] {} active on CPU (4 intra-threads) from: {:?}", title, path);
+                            println!(
+                                "[CascadeEngine] {} active on CPU (4 intra-threads) from: {:?}",
+                                title, path
+                            );
                             Some(s)
                         }
                         Err(e) => {
-                            eprintln!("[CascadeEngine] Failed to create session for {:?}: {:?}", path, e);
+                            eprintln!(
+                                "[CascadeEngine] Failed to create session for {:?}: {:?}",
+                                path, e
+                            );
                             None
                         }
                     }
                 }
             }
         } else {
-            eprintln!("[CascadeEngine] {} ({}) not found on disk!", title, filename);
+            eprintln!(
+                "[CascadeEngine] {} ({}) not found on disk!",
+                title, filename
+            );
             None
         }
     }
 
     pub fn is_ready(&self) -> bool {
-        let vit_ok = self.vit_session.lock().map(|s| s.is_some()).unwrap_or(false);
-        let nude_ok = self.nude640_session.lock().map(|s| s.is_some()).unwrap_or(false);
+        let vit_ok = self
+            .vit_session
+            .lock()
+            .map(|s| s.is_some())
+            .unwrap_or(false);
+        let nude_ok = self
+            .nude640_session
+            .lock()
+            .map(|s| s.is_some())
+            .unwrap_or(false);
         vit_ok || nude_ok
     }
 
@@ -476,13 +606,15 @@ impl CascadeEngine {
         self.poll_obs_heartbeat();
 
         let tracker_is_active = self.tracker.lock().map(|t| t.is_active()).unwrap_or(false);
-        let is_actively_tracking = self.active_tracking_frames.load(Ordering::Relaxed) > 0 || tracker_is_active;
+        let is_actively_tracking =
+            self.active_tracking_frames.load(Ordering::Relaxed) > 0 || tracker_is_active;
 
         // Periodic deep scan pulse:
         // In balanced/idle mode (5 FPS), every 4th frame (~800ms) runs Stage 2 unconditionally
         // so a static frame with subtle anatomy or unusual lighting never sits undetected.
         let periodic_deep_pulse = _frame_num % 4 == 0;
 
+        let tuning = self.get_model_tuning();
         let mut stage1_score = 0.005f32;
         let mut stage1_label = "Neutral".to_string();
         // Trigger Stage 2 unconditionally if Boost Mode is ON (60 FPS Danger Zone),
@@ -527,14 +659,18 @@ impl CascadeEngine {
                 input_data.extend(ch_g);
                 input_data.extend(ch_b);
 
-                if let Ok(val) = Value::from_array(([1, 3, VIT_INPUT_SIZE, VIT_INPUT_SIZE], input_data)) {
+                if let Ok(val) =
+                    Value::from_array(([1, 3, VIT_INPUT_SIZE, VIT_INPUT_SIZE], input_data))
+                {
                     if let Ok(outputs) = session.run(ort::inputs![val]) {
                         if let Ok((_shape, logits)) = outputs[0].try_extract_tensor::<f32>() {
                             if logits.len() >= 5 {
                                 // Softmax
                                 let mut max_l = logits[0];
                                 for &l in logits.iter() {
-                                    if l > max_l { max_l = l; }
+                                    if l > max_l {
+                                        max_l = l;
+                                    }
                                 }
                                 let mut sum_exp = 0.0f32;
                                 let mut probs = [0.0f32; 5];
@@ -558,12 +694,20 @@ impl CascadeEngine {
 
                                 // Weighted ViT score:
                                 // Include subtle drawings/anime NSFW hint if drawings is high and non-neutral
-                                let drawings_nsfw_hint = if p_drawings > 0.35 {
+                                // When vit_game_filter is active (e.g. Gaming profile), suppress drawings hint
+                                // to prevent false alarms on game textures and cel-shading.
+                                let drawings_nsfw_hint = if tuning.vit_game_filter {
+                                    0.0
+                                } else if p_drawings > 0.35 {
                                     (p_hentai * 1.2 + p_sexy * 0.8).min(0.5)
                                 } else {
                                     0.0
                                 };
-                                stage1_score = (p_porn * 1.0 + p_hentai * 0.95 + p_sexy * 0.70 + drawings_nsfw_hint).min(1.0);
+                                stage1_score = (p_porn * 1.0
+                                    + p_hentai * 0.95
+                                    + p_sexy * 0.70
+                                    + drawings_nsfw_hint)
+                                    .min(1.0);
 
                                 if p_porn >= 0.40 {
                                     stage1_label = "Pornography".to_string();
@@ -581,14 +725,20 @@ impl CascadeEngine {
                                 // - Boost mode / tracking / periodic pulse was already true
                                 // - Stage 1 score exceeds sensitive threshold (at 65% sens -> ~0.0455)
                                 // - Even 1.5% porn, 2.0% hentai, or 3.5% sexy is detected
-                                // - Or ViT neutral confidence falls below 95% (meaning non-trivial suspicion)
+                                // - Or ViT neutral confidence drops (for game filter: < 0.80 instead of < 0.95)
+                                let premature_neutral_trigger = if tuning.vit_game_filter {
+                                    p_neutral < 0.80
+                                } else {
+                                    p_neutral < 0.95
+                                };
+
                                 stage1_trigger = stage1_trigger
                                     || stage1_score >= vit_trigger_cutoff
                                     || stage1_score >= 0.20
                                     || p_porn >= 0.015
                                     || p_hentai >= 0.02
                                     || p_sexy >= 0.035
-                                    || p_neutral < 0.95;
+                                    || premature_neutral_trigger;
                             } else if logits.len() == 2 {
                                 // 2-Class Model: 0: normal, 1: nsfw
                                 let max_l = logits[0].max(logits[1]);
@@ -637,8 +787,10 @@ impl CascadeEngine {
                     let (scaled_w, scaled_h, pad_x, pad_y) = if width > 0 && height > 0 {
                         let r = (NUDENET_INPUT_SIZE as f32 / width as f32)
                             .min(NUDENET_INPUT_SIZE as f32 / height as f32);
-                        let s_w = ((width as f32 * r).round() as usize).clamp(1, NUDENET_INPUT_SIZE);
-                        let s_h = ((height as f32 * r).round() as usize).clamp(1, NUDENET_INPUT_SIZE);
+                        let s_w =
+                            ((width as f32 * r).round() as usize).clamp(1, NUDENET_INPUT_SIZE);
+                        let s_h =
+                            ((height as f32 * r).round() as usize).clamp(1, NUDENET_INPUT_SIZE);
                         let p_x = (NUDENET_INPUT_SIZE - s_w) / 2;
                         let p_y = (NUDENET_INPUT_SIZE - s_h) / 2;
                         (s_w, s_h, p_x, p_y)
@@ -655,7 +807,8 @@ impl CascadeEngine {
                             if is_top_down {
                                 ((norm_y * height as usize) / scaled_h).min(height as usize - 1)
                             } else {
-                                (height as usize - 1).saturating_sub((norm_y * height as usize) / scaled_h)
+                                (height as usize - 1)
+                                    .saturating_sub((norm_y * height as usize) / scaled_h)
                             }
                         } else {
                             0
@@ -665,7 +818,8 @@ impl CascadeEngine {
                             let in_x = x >= pad_x && x < pad_x + scaled_w;
                             if in_y && in_x {
                                 let norm_x = x - pad_x;
-                                let sx = ((norm_x * width as usize) / scaled_w).min(width as usize - 1);
+                                let sx =
+                                    ((norm_x * width as usize) / scaled_w).min(width as usize - 1);
                                 let idx = (sy * width as usize + sx) * 4;
                                 if idx + 2 < pixels.len() {
                                     ch_b.push(pixels[idx] as f32 / 255.0);
@@ -684,12 +838,16 @@ impl CascadeEngine {
                         }
                     }
 
-                    let mut input_data = Vec::with_capacity(1 * 3 * NUDENET_INPUT_SIZE * NUDENET_INPUT_SIZE);
+                    let mut input_data =
+                        Vec::with_capacity(1 * 3 * NUDENET_INPUT_SIZE * NUDENET_INPUT_SIZE);
                     input_data.extend(ch_r);
                     input_data.extend(ch_g);
                     input_data.extend(ch_b);
 
-                    if let Ok(val) = Value::from_array(([1, 3, NUDENET_INPUT_SIZE, NUDENET_INPUT_SIZE], input_data)) {
+                    if let Ok(val) = Value::from_array((
+                        [1, 3, NUDENET_INPUT_SIZE, NUDENET_INPUT_SIZE],
+                        input_data,
+                    )) {
                         if let Ok(outputs) = session.run(ort::inputs![val]) {
                             if let Ok((_shape, data)) = outputs[0].try_extract_tensor::<f32>() {
                                 let mut candidates = Vec::new();
@@ -731,6 +889,11 @@ impl CascadeEngine {
                                         continue;
                                     }
 
+                                    // Filter by user's minimum anatomical confidence cutoff from tuning profile
+                                    if d.score < tuning.nudenet_min_confidence {
+                                        continue;
+                                    }
+
                                     if is_exp || is_sug {
                                         // Per-class threshold calibration:
                                         // High-risk genitalia & anus have extra sensitive trigger floor
@@ -748,10 +911,18 @@ impl CascadeEngine {
                                             }
 
                                             // Map from 640x640 letterbox coordinates back to normalized screen space [0..1]
-                                            let u1 = ((d.box_coords.0 - pad_x as f32) / scaled_w as f32).clamp(0.0, 1.0);
-                                            let v1 = ((d.box_coords.1 - pad_y as f32) / scaled_h as f32).clamp(0.0, 1.0);
-                                            let u2 = ((d.box_coords.2 - pad_x as f32) / scaled_w as f32).clamp(0.0, 1.0);
-                                            let v2 = ((d.box_coords.3 - pad_y as f32) / scaled_h as f32).clamp(0.0, 1.0);
+                                            let u1 = ((d.box_coords.0 - pad_x as f32)
+                                                / scaled_w as f32)
+                                                .clamp(0.0, 1.0);
+                                            let v1 = ((d.box_coords.1 - pad_y as f32)
+                                                / scaled_h as f32)
+                                                .clamp(0.0, 1.0);
+                                            let u2 = ((d.box_coords.2 - pad_x as f32)
+                                                / scaled_w as f32)
+                                                .clamp(0.0, 1.0);
+                                            let v2 = ((d.box_coords.3 - pad_y as f32)
+                                                / scaled_h as f32)
+                                                .clamp(0.0, 1.0);
 
                                             let (final_u1, final_u2) = (u1.min(u2), u1.max(u2));
                                             let (final_v1, final_v2) = if is_top_down {
@@ -791,7 +962,8 @@ impl CascadeEngine {
             } else {
                 let cur = self.active_tracking_frames.load(Ordering::Relaxed);
                 if cur > 0 {
-                    self.active_tracking_frames.store(cur - 1, Ordering::Relaxed);
+                    self.active_tracking_frames
+                        .store(cur - 1, Ordering::Relaxed);
                 }
             }
         }
@@ -813,7 +985,11 @@ impl CascadeEngine {
         let vit_violation = stage1_score >= vit_full_violation_cutoff;
 
         let is_violation = has_boxes || vit_violation;
-        let final_score = if top_anatomical_score > stage1_score { top_anatomical_score } else { stage1_score };
+        let final_score = if top_anatomical_score > stage1_score {
+            top_anatomical_score
+        } else {
+            stage1_score
+        };
 
         let primary_label = if has_boxes {
             top_anatomical_label.clone()

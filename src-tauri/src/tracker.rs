@@ -65,6 +65,11 @@ impl ZeroMissTracker {
         }
     }
 
+    /// Dynamically sets the tracker hold retention frames (max_age)
+    pub fn set_max_age(&mut self, max_age: u32) {
+        self.config.max_age = (max_age as usize).clamp(3, 120);
+    }
+
     /// Predict next positions of all tracks using motion vector inertia
     pub fn predict(&mut self) {
         for trk in &mut self.tracks {
@@ -84,10 +89,7 @@ impl ZeroMissTracker {
     }
 
     /// Calculate IoU between two bounding boxes
-    fn calculate_iou(
-        b1: (f32, f32, f32, f32),
-        b2: (f32, f32, f32, f32),
-    ) -> f32 {
+    fn calculate_iou(b1: (f32, f32, f32, f32), b2: (f32, f32, f32, f32)) -> f32 {
         let x1 = b1.0.max(b2.0);
         let y1 = b1.1.max(b2.1);
         let x2 = b1.2.min(b2.2);

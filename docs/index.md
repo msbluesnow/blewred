@@ -97,6 +97,19 @@ Rather than running heavy object detectors on every single frame, blewred utiliz
 - **Hold-Decay Memory (30 frames)**: Active masks persist for 30 frames (~500 ms) with decaying confidence, eliminating strobe flickering and edge chatter.
 - **Dynamic 60 FPS Escalation**: When danger is flagged, analysis pacing ramps from 5 FPS (background idle) to 60 FPS (12 ms interval) in a single frame.
 
+### Model Tuning & Content Profiles
+Accessible via the **Tuning** button in the AI Neural Cascade panel header:
+- **Built-in Presets (Deletion Protected)**:
+  - `Gaming` (3D & Anime / Games): Enables ViT game filter (disregarding anime drawings and cel-shading), sets NudeNet threshold to 0.38, and holds tracking for 12 frames.
+  - `RealLife` (IRL / Live Webcam): Balanced human anatomy detection with 0.25 threshold and 25-frame tracker hold.
+  - `Strict` (Max Sensitivity): High-paranoia protection (0.15 threshold, 30-frame hold).
+- **Custom Profiles**:
+  - Fine-tune ViT cel-shading filter, NudeNet minimum confidence cutoff (0.10–0.80), tracker hold frames (5–60), and exact rule strings (`exact_rules`).
+  - Save the active configuration into named `.json` files via the dedicated bottom card in the modal.
+  - Delete any custom profile with automatic fallback to `Gaming`.
+  - Direct **Profiles Folder** button to open the storage directory in Windows Explorer.
+  - **NSIS Installer Compatibility**: In installed read-only environments (`C:\Program Files\blewred`), user profiles and settings transparently write to `%LOCALAPPDATA%\blewred\profiles` and `%LOCALAPPDATA%\blewred\config`.
+
 ---
 
 ## 4. Text Recognition (OCR) & Player Cues
@@ -123,6 +136,9 @@ The native plugin (`obs-blewred.dll`) is injected directly into the 64-bit OBS S
 - **D3D11 Pipeline Hook**: Defocus blurring runs via an HLSL pixel shader (`PSCensor`) directly in VRAM before video encoding.
 - **Clean Streamer Display**: The streamer's monitor is untouched; censorship applies exclusively to the outgoing broadcast.
 - **UDP Loopback Dispatch**: Coordinates are sent from blewred to OBS via localhost UDP (`127.0.0.1:51799`) in < 0.2 ms.
+- **Process-Wide UDP Singleton**: All filter instances across all capture sources share a single background UDP listener (`g_shared_udp`) on port `51799`, eliminating socket binding collisions (`SO_REUSEADDR`) across multiple capture sources and ensuring reliable selective blur when toggling between full-screen Censor Shield and localized box blurring.
+- **Locale-Agnostic Parsing**: Coordinate decoding uses a fast, locale-independent float parser (`parse_float_fast`) immune to system locale settings (dot vs. comma decimal separators).
+- **Automated Dual-Layer Deployment**: The plugin binary is synced automatically to both user-profile directories (`%APPDATA%\obs-studio\plugins\obs-blewred\bin\64bit\`) and system directories (`%ProgramFiles%\obs-studio\obs-plugins\64bit\`) via the in-app **OBS Auto-Setup** feature (and for developers via `run.bat` / `scripts/update_obs_plugin.bat`).
 
 ### Emergency Censor Shield
 A stylish browser source (`blewred_Censor_Shield`) is injected into OBS scenes. In major incidents, the system activates full-screen censorship within 1 ms and mutes audio.

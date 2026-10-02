@@ -119,6 +119,7 @@ All visual and audio censorship takes place **directly inside OBS Studio at the 
 * **The streamer's physical monitor remains 100% untouched**: games, desktop windows, Discord, and mouse movements are never dimmed, blurred, or lagged. The streamer always sees the original pristine screen.
 * **Censorship is visible only to stream viewers**: the `obs-blewred.dll` plugin hooks into OBS Studio's DirectX 11 (D3D11) graphics render pipeline. It processes the capture frame **before** it is encoded via NVENC/x264 and transmitted to platform ingest servers.
 * **Hardware HLSL Pixel Shader (`PSCensor`)**: defocus blurring and pixelation algorithms run on parallel GPU compute cores directly inside Video RAM (VRAM). Applying the censor filter takes **less than 0.1 milliseconds**, placing zero computational load on the CPU.
+* **Process-Wide UDP Singleton & Locale-Agnostic Parsing**: `obs-blewred.dll` utilizes a unified background UDP listener on `127.0.0.1:51799` shared across all scene sources to prevent socket port collisions, paired with a custom locale-independent float decoder ensuring pixel-accurate selective blurring across all regional Windows environments.
 
 ---
 
@@ -178,6 +179,11 @@ blewred avoids running heavy object detectors on every single frame, which would
    - **Forced Boost Mode (F8)**: streamers can lock the engine into 60 FPS permanently using the F8 hotkey (or custom remapped shortcut) or via the UI toggle.
    - **Hardware Standby (0 FPS)**: in PlayerOnly (Mode 1) and Standby (Mode 3), video capture and OCR immediately sleep (0 FPS, < 1% CPU).
    - **End-to-End UI Synchronization**: the engine broadcasts measured rolling-window FPS and live statuses (`Idle Scan 5 FPS`, `Dynamic Escalation 60 FPS`, `Threat Boost 60 FPS`, `Paused 0 FPS`) to the top ribbon without desync.
+7. **Content Profiles & Model Fine-Tuning (Model Tuning)**:
+   - **Cascade Header Trigger**: A dedicated "Tuning" button opens the dark Bootstrap 3 modal.
+   - **Built-in Presets (Deletion Protected)**: `Gaming` (ViT 3D/anime game filter, 0.38 NudeNet cutoff, 12-frame tracker hold), `RealLife` (0.25 cutoff, 25-frame hold), and `Strict` (0.15 cutoff, 30-frame hold).
+   - **Custom User Profiles**: Modify parameters and save into `.json` profile files in the bottom area. A dedicated "Profiles Folder" button opens the folder in Explorer. Custom profiles can be deleted anytime with automatic fallback to `Gaming`.
+   - **NSIS Installer Compatibility**: In read-only installation paths (`C:\Program Files\blewred`), profiles and settings automatically write to `%LOCALAPPDATA%\blewred\profiles`.
 
 #### Neural Network Model Downloads & Cryptographic Hashes
 Models can be downloaded in 1 click from the blewred Control Center, or acquired manually for offline deployment into the `models/` directory:

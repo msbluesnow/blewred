@@ -45,13 +45,16 @@ if "%NEED_CLEAN%"=="1" (
     echo [Launcher] Environment synced to: %~dp0
 )
 
-REM Quick attempt to copy native OBS plugin if target is writable
-if exist "%ProgramFiles%\obs-studio\obs-plugins\64bit" (
-        if exist "%~dp0plugins\obs-blewred\dist\obs-blewred.dll" (
-            copy /Y "%~dp0plugins\obs-blewred\dist\obs-blewred.dll" "%ProgramFiles%\obs-studio\obs-plugins\64bit\" >nul 2>&1
-        ) else if exist "%~dp0plugins\obs-blewred\obs-blewred.dll" (
-            copy /Y "%~dp0plugins\obs-blewred\obs-blewred.dll" "%ProgramFiles%\obs-studio\obs-plugins\64bit\" >nul 2>&1
-        )
+REM Deploy native OBS plugin to user profile and system directories
+set "PLUGIN_SOURCE=%~dp0plugins\obs-blewred\dist\obs-blewred.dll"
+if not exist "!PLUGIN_SOURCE!" set "PLUGIN_SOURCE=%~dp0plugins\obs-blewred\obs-blewred.dll"
+if exist "!PLUGIN_SOURCE!" (
+    if not exist "%APPDATA%\obs-studio\plugins\obs-blewred\bin\64bit" mkdir "%APPDATA%\obs-studio\plugins\obs-blewred\bin\64bit" >nul 2>&1
+    copy /Y "!PLUGIN_SOURCE!" "%APPDATA%\obs-studio\plugins\obs-blewred\bin\64bit\obs-blewred.dll" >nul 2>&1
+    if not exist "%APPDATA%\obs-studio\obs-plugins\64bit" mkdir "%APPDATA%\obs-studio\obs-plugins\64bit" >nul 2>&1
+    copy /Y "!PLUGIN_SOURCE!" "%APPDATA%\obs-studio\obs-plugins\64bit\obs-blewred.dll" >nul 2>&1
+    if exist "%ProgramFiles%\obs-studio\obs-plugins\64bit" (
+        copy /Y "!PLUGIN_SOURCE!" "%ProgramFiles%\obs-studio\obs-plugins\64bit\obs-blewred.dll" >nul 2>&1
     )
 )
 

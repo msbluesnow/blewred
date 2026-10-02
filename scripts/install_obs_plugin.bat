@@ -57,7 +57,7 @@ if not exist "%CFG_FILE%" (
     echo [OK] obs-websocket configuration is already present.
 )
 
-REM 3. Optional System directory installation (only if already running elevated)
+REM 3. System directory installation (C:\Program Files\obs-studio\obs-plugins\64bit)
 net session >nul 2>&1
 if %errorLevel% equ 0 (
     set "OBS_DIR=%ProgramFiles%\obs-studio"
@@ -71,6 +71,12 @@ if %errorLevel% equ 0 (
         if !errorLevel! equ 0 (
             echo [OK] Copied to system plugin directory: "!DEST_DIR!\obs-blewred.dll"
         )
+    )
+) else (
+    echo [INFO] Elevating to copy to system OBS directory...
+    powershell -NoProfile -Command "Start-Process cmd.exe -ArgumentList '/c copy /Y \"\"%PLUGIN_SRC%\"\" \"\"%ProgramFiles%\obs-studio\obs-plugins\64bit\obs-blewred.dll\"\"' -Verb RunAs -Wait" 2>nul
+    if exist "%ProgramFiles%\obs-studio\obs-plugins\64bit\obs-blewred.dll" (
+        echo [OK] Successfully updated system OBS plugin!
     )
 )
 

@@ -748,6 +748,59 @@ async fn set_language(state: State<'_, AppState>, language: String) -> Result<()
     Ok(())
 }
 
+#[tauri::command]
+async fn get_model_profiles() -> Result<Vec<crate::cascade::ModelProfile>, String> {
+    Ok(crate::settings::load_saved_model_profiles())
+}
+
+#[tauri::command]
+async fn save_model_profile(
+    state: State<'_, AppState>,
+    profile: crate::cascade::ModelProfile,
+) -> Result<Vec<crate::cascade::ModelProfile>, String> {
+    let updated = crate::settings::save_user_model_profile(&profile)?;
+    state.vision.set_model_tuning(profile.clone());
+    state.ws.broadcast_model_tuning_changed(&profile);
+    state.ws.broadcast_model_profiles_changed(&updated, &profile.name);
+    Ok(updated)
+}
+
+#[tauri::command]
+async fn delete_model_profile(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<Vec<crate::cascade::ModelProfile>, String> {
+    let updated = crate::settings::delete_user_model_profile(&name)?;
+    let active_tuning = state.vision.get_model_tuning();
+    state.ws.broadcast_model_tuning_changed(&active_tuning);
+    state.ws.broadcast_model_profiles_changed(&updated, "Gaming");
+    Ok(updated)
+}
+
+#[tauri::command]
+async fn open_profiles_folder() -> Result<(), String> {
+    crate::settings::open_profiles_folder_in_explorer()
+}
+
+#[tauri::command]
+async fn get_model_tuning(state: State<'_, AppState>) -> Result<crate::cascade::ModelProfile, String> {
+    Ok(state.vision.get_model_tuning())
+}
+
+#[tauri::command]
+async fn set_model_tuning(
+    state: State<'_, AppState>,
+    tuning: crate::cascade::ModelProfile,
+) -> Result<(), String> {
+    state.vision.set_model_tuning(tuning.clone());
+    crate::settings::update_cached_settings(|s| {
+        s.model_tuning = tuning.clone();
+        s.active_model_profile = tuning.name.clone();
+    });
+    state.ws.broadcast_model_tuning_changed(&tuning);
+    Ok(())
+}
+
 
 #[tauri::command]
 async fn toggle_realtime_guard(state: State<'_, AppState>) -> Result<bool, String> {
@@ -1494,6 +1547,7 @@ pub fn run() {
     vision_engine.set_censor_categories(user_settings.censor_categories);
     vision_engine.set_ocr_enabled(user_settings.ocr_enabled);
     vision_engine.cascade.set_boost_mode(user_settings.fps_boosted);
+    vision_engine.set_model_tuning(user_settings.model_tuning.clone());
 
     let fps_boosted = Arc::new(AtomicBool::new(user_settings.fps_boosted));
 
@@ -1866,7 +1920,13 @@ pub fn run() {
             hide_lookahead_preview,
             get_latest_lookahead_preview,
             is_lookahead_preview_open,
-            test_lookahead_preview_frame
+            test_lookahead_preview_frame,
+            get_model_profiles,
+            save_model_profile,
+            delete_model_profile,
+            open_profiles_folder,
+            get_model_tuning,
+            set_model_tuning
         ])
         .run(tauri::generate_context!())
         .map_err(|e| {

@@ -601,13 +601,11 @@ impl PathResolver {
 
             if std::fs::copy(&src, &sys_dest).is_ok() {
                 installed_locations.push(format!("system OBS directory ({:?})", sys_dest));
-            } else if sys_dest.exists() {
-                installed_locations.push(format!("system OBS directory (already present: {:?})", sys_dest));
             } else {
                 // If direct copy fails due to permissions (C:\Program Files requires UAC),
                 // invoke elevated copy via PowerShell Start-Process -Verb RunAs
                 println!("[PathResolver] System OBS plugin directory requires admin elevation. Triggering UAC prompt...");
-                let _ = create_no_window_command("powershell.exe")
+                let status = create_no_window_command("powershell.exe")
                     .args([
                         "-NoProfile",
                         "-WindowStyle", "Hidden",
@@ -620,8 +618,10 @@ impl PathResolver {
                     ])
                     .status();
 
-                if sys_dest.exists() {
+                if status.map(|s| s.success()).unwrap_or(false) {
                     installed_locations.push(format!("system OBS directory ({:?})", sys_dest));
+                } else if sys_dest.exists() {
+                    installed_locations.push(format!("system OBS directory (already present: {:?})", sys_dest));
                 }
             }
         }

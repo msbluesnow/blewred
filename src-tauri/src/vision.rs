@@ -1,8 +1,8 @@
+use crate::lexical::LexicalEngine;
+use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::Arc;
-use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-use crate::lexical::LexicalEngine;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScreenAnalysisResult {
@@ -238,18 +238,27 @@ pub struct RawBox {
 /// Class-aware Non-Maximum Suppression (NMS)
 /// Prevents non-censored overlapping classes (faces, belly, feet) from erasing critical censored anatomy.
 pub fn run_nudenet_nms(mut dets: Vec<RawBox>, iou_thresh: f32) -> Vec<RawBox> {
-    dets.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+    dets.sort_by(|a, b| {
+        b.score
+            .partial_cmp(&a.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     let mut keep = Vec::new();
     let mut suppressed = vec![false; dets.len()];
 
     for i in 0..dets.len() {
-        if suppressed[i] { continue; }
+        if suppressed[i] {
+            continue;
+        }
         keep.push(dets[i].clone());
         let a = &dets[i];
-        let area_a = (a.box_coords.2 - a.box_coords.0).max(0.0) * (a.box_coords.3 - a.box_coords.1).max(0.0);
+        let area_a =
+            (a.box_coords.2 - a.box_coords.0).max(0.0) * (a.box_coords.3 - a.box_coords.1).max(0.0);
 
         for j in (i + 1)..dets.len() {
-            if suppressed[j] { continue; }
+            if suppressed[j] {
+                continue;
+            }
             let b = &dets[j];
             // Class-aware constraint: only suppress boxes of the identical class
             if a.class_id != b.class_id {
@@ -260,7 +269,8 @@ pub fn run_nudenet_nms(mut dets: Vec<RawBox>, iou_thresh: f32) -> Vec<RawBox> {
             let xx2 = a.box_coords.2.min(b.box_coords.2);
             let yy2 = a.box_coords.3.min(b.box_coords.3);
             let inter = (xx2 - xx1).max(0.0) * (yy2 - yy1).max(0.0);
-            let area_b = (b.box_coords.2 - b.box_coords.0).max(0.0) * (b.box_coords.3 - b.box_coords.1).max(0.0);
+            let area_b = (b.box_coords.2 - b.box_coords.0).max(0.0)
+                * (b.box_coords.3 - b.box_coords.1).max(0.0);
             let union_area = area_a + area_b - inter;
             if union_area > 0.0 && (inter / union_area) > iou_thresh {
                 suppressed[j] = true;
@@ -316,6 +326,14 @@ impl VisionEngine {
 
     pub fn is_model_ready(&self) -> bool {
         self.cascade.is_ready()
+    }
+
+    pub fn get_model_tuning(&self) -> crate::cascade::ModelProfile {
+        self.cascade.get_model_tuning()
+    }
+
+    pub fn set_model_tuning(&self, tuning: crate::cascade::ModelProfile) {
+        self.cascade.set_model_tuning(tuning);
     }
 
     pub fn is_russian_ocr_installed() -> bool {
@@ -382,26 +400,34 @@ impl VisionEngine {
         let valid_idx = index.max(0);
         if let Ok(mut guard) = self.selected_monitor.try_lock() {
             *guard = valid_idx;
-            println!("[VisionEngine] Selected monitor changed to physical monitor index: {}", valid_idx);
+            println!(
+                "[VisionEngine] Selected monitor changed to physical monitor index: {}",
+                valid_idx
+            );
         }
         // Invalidate OCR cache and reset tracker state so switching monitors is immediate and clean
         if let Ok(mut cache) = self.cached_ocr_result.lock() {
             *cache = (false, Vec::new(), String::new());
         }
-        self.last_ocr_time.store(0, std::sync::atomic::Ordering::Relaxed);
+        self.last_ocr_time
+            .store(0, std::sync::atomic::Ordering::Relaxed);
         self.cascade.clear_obs_plugin_censor();
     }
 
     pub fn get_selected_monitor_name(&self) -> String {
         let idx = self.get_selected_monitor();
         let monitors = Self::enumerate_monitors();
-        monitors.iter().find(|m| m.index == idx)
+        monitors
+            .iter()
+            .find(|m| m.index == idx)
             .map(|m| m.name.clone())
             .unwrap_or_else(|| format!("Monitor {}", idx + 1))
     }
 
     pub fn get_current_timestamp() -> String {
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default();
         let secs = now.as_secs();
         let millis = now.subsec_millis();
         let h = (secs / 3600) % 24;
@@ -411,7 +437,9 @@ impl VisionEngine {
     }
 
     pub fn get_current_timestamp_hms() -> String {
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default();
         let secs = now.as_secs();
         let h = (secs / 3600) % 24;
         let m = (secs / 60) % 60;
@@ -512,9 +540,7 @@ impl VisionEngine {
             }
 
             let (src_x, src_y, width, height) = match monitor_idx {
-                None => {
-                    (0, 0, gdi::GetSystemMetrics(0), gdi::GetSystemMetrics(1))
-                }
+                None => (0, 0, gdi::GetSystemMetrics(0), gdi::GetSystemMetrics(1)),
                 Some(idx) => {
                     if idx == -1 {
                         let x = gdi::GetSystemMetrics(76);
@@ -553,14 +579,7 @@ impl VisionEngine {
             bmi.bmiHeader.biCompression = 0; // BI_RGB
 
             let mut bits_ptr: *mut u8 = std::ptr::null_mut();
-            let hbmp = gdi::CreateDIBSection(
-                hdc_mem,
-                &bmi,
-                0,
-                &mut bits_ptr,
-                0,
-                0,
-            );
+            let hbmp = gdi::CreateDIBSection(hdc_mem, &bmi, 0, &mut bits_ptr, 0, 0);
 
             if hbmp == 0 || bits_ptr.is_null() {
                 gdi::DeleteDC(hdc_mem);
@@ -618,12 +637,23 @@ impl VisionEngine {
         }
     }
 
-    pub fn classify_nsfw(&self, width: u32, height: u32, pixels: &[u8]) -> (bool, f32, String, String) {
-        let cascade_res = self.cascade.classify_frame(pixels, width, height, self.get_nsfw_threshold(), true);
+    pub fn classify_nsfw(
+        &self,
+        width: u32,
+        height: u32,
+        pixels: &[u8],
+    ) -> (bool, f32, String, String) {
+        let cascade_res =
+            self.cascade
+                .classify_frame(pixels, width, height, self.get_nsfw_threshold(), true);
         let is_nsfw = cascade_res.is_violation;
         let nsfw_score = cascade_res.score;
         let label = cascade_res.primary_label.clone();
-        let category = if is_nsfw { "Pornography".to_string() } else { "Neutral".to_string() };
+        let category = if is_nsfw {
+            "Pornography".to_string()
+        } else {
+            "Neutral".to_string()
+        };
 
         (is_nsfw, nsfw_score, label, category)
     }
@@ -659,7 +689,10 @@ impl VisionEngine {
         None
     }
 
-    pub fn check_screen_for_stopwords(&self, monitor_idx: Option<i32>) -> (bool, Vec<String>, String) {
+    pub fn check_screen_for_stopwords(
+        &self,
+        monitor_idx: Option<i32>,
+    ) -> (bool, Vec<String>, String) {
         let m_idx = monitor_idx.unwrap_or_else(|| self.get_selected_monitor());
         let mut combined_text = String::new();
 
@@ -677,7 +710,10 @@ impl VisionEngine {
 
         let (has_banned, words) = if let Ok(engine) = self.lexical.try_lock() {
             let matches = engine.check_text(&combined_text);
-            (!matches.is_empty(), matches.into_iter().map(|m| m.word).collect())
+            (
+                !matches.is_empty(),
+                matches.into_iter().map(|m| m.word).collect(),
+            )
         } else {
             (false, Vec::new())
         };
@@ -685,11 +721,19 @@ impl VisionEngine {
         (has_banned, words, combined_text)
     }
 
-    pub fn check_screen_pixels_for_stopwords(&self, width: u32, height: u32, pixels: &[u8]) -> (bool, Vec<String>, String) {
+    pub fn check_screen_pixels_for_stopwords(
+        &self,
+        width: u32,
+        height: u32,
+        pixels: &[u8],
+    ) -> (bool, Vec<String>, String) {
         let ocr_text = Self::recognize_text_from_bgra(width, height, pixels);
         let (has_banned, words) = if let Ok(engine) = self.lexical.try_lock() {
             let matches = engine.check_text(&ocr_text);
-            (!matches.is_empty(), matches.into_iter().map(|m| m.word).collect())
+            (
+                !matches.is_empty(),
+                matches.into_iter().map(|m| m.word).collect(),
+            )
         } else {
             (false, Vec::new())
         };
@@ -711,10 +755,17 @@ impl VisionEngine {
         // Capture exclusively the selected physical monitor via Windows GDI desktop capture.
         // Recognition happens strictly on this chosen monitor.
         let (w, h, px) = Self::capture_screen(Some(valid_idx))?;
-        let (width, height, pixels, is_top_down, monitor_name) = (w, h, px, true, default_monitor_name);
+        let (width, height, pixels, is_top_down, monitor_name) =
+            (w, h, px, true, default_monitor_name);
 
         // 1. Two-Stage Cascaded Neural Network (ViT + NudeNet 640m)
-        let cascade_res = self.cascade.classify_frame(&pixels, width, height, self.get_nsfw_threshold(), is_top_down);
+        let cascade_res = self.cascade.classify_frame(
+            &pixels,
+            width,
+            height,
+            self.get_nsfw_threshold(),
+            is_top_down,
+        );
         let is_nsfw = cascade_res.is_violation;
         let nsfw_score = cascade_res.score;
         let nsfw_label = cascade_res.primary_label.clone();
@@ -723,11 +774,17 @@ impl VisionEngine {
         let (ocr_violation, banned_words, ocr_text) = if !self.is_ocr_enabled() {
             (false, Vec::new(), "(OCR recognition disabled)".to_string())
         } else {
-            let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
-            let last_ocr = self.last_ocr_time.load(std::sync::atomic::Ordering::Relaxed);
+            let now_ms = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64;
+            let last_ocr = self
+                .last_ocr_time
+                .load(std::sync::atomic::Ordering::Relaxed);
             if now_ms.saturating_sub(last_ocr) >= 500 {
                 let res = self.check_screen_pixels_for_stopwords(width, height, &pixels);
-                self.last_ocr_time.store(now_ms, std::sync::atomic::Ordering::Relaxed);
+                self.last_ocr_time
+                    .store(now_ms, std::sync::atomic::Ordering::Relaxed);
                 if let Ok(mut cache) = self.cached_ocr_result.lock() {
                     *cache = res.clone();
                 }
@@ -749,7 +806,9 @@ impl VisionEngine {
             "Neutral".to_string()
         };
 
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default();
         let secs = now.as_secs();
         let millis = now.subsec_millis();
         let h = (secs / 3600) % 24;
@@ -791,49 +850,72 @@ impl VisionEngine {
             format!("Monitor {}", m_idx + 1)
         };
 
-        let (found, word, rule, source, snippet) = if let Some(custom) = custom_text.filter(|s| !s.trim().is_empty()) {
-            let matches = if let Ok(engine) = self.lexical.try_lock() {
-                engine.check_text(&custom)
+        let (found, word, rule, source, snippet) =
+            if let Some(custom) = custom_text.filter(|s| !s.trim().is_empty()) {
+                let matches = if let Ok(engine) = self.lexical.try_lock() {
+                    engine.check_text(&custom)
+                } else {
+                    Vec::new()
+                };
+                if !matches.is_empty() {
+                    (
+                        true,
+                        matches[0].word.clone(),
+                        matches[0].rule.clone(),
+                        "User Input".to_string(),
+                        custom,
+                    )
+                } else {
+                    (
+                        false,
+                        String::new(),
+                        String::new(),
+                        "User Input".to_string(),
+                        custom,
+                    )
+                }
             } else {
-                Vec::new()
-            };
-            if !matches.is_empty() {
-                (true, matches[0].word.clone(), matches[0].rule.clone(), "User Input".to_string(), custom)
-            } else {
-                (false, String::new(), String::new(), "User Input".to_string(), custom)
-            }
-        } else {
-            let (has_banned, words, recognized) = self.check_screen_for_stopwords(Some(m_idx));
-            let chars: Vec<char> = recognized.chars().collect();
-            let short_snippet = if has_banned && !words.is_empty() {
-                let target = &words[0];
-                if let Some(idx) = recognized.to_lowercase().find(&target.to_lowercase()) {
-                    let char_pos = recognized[..idx].chars().count();
-                    let start = char_pos.saturating_sub(15);
-                    let end = (char_pos + target.chars().count() + 15).min(chars.len());
-                    let mut s = chars[start..end].iter().collect::<String>();
-                    if start > 0 { s = format!("...{}", s); }
-                    if end < chars.len() { s = format!("{}...", s); }
-                    s
+                let (has_banned, words, recognized) = self.check_screen_for_stopwords(Some(m_idx));
+                let chars: Vec<char> = recognized.chars().collect();
+                let short_snippet = if has_banned && !words.is_empty() {
+                    let target = &words[0];
+                    if let Some(idx) = recognized.to_lowercase().find(&target.to_lowercase()) {
+                        let char_pos = recognized[..idx].chars().count();
+                        let start = char_pos.saturating_sub(15);
+                        let end = (char_pos + target.chars().count() + 15).min(chars.len());
+                        let mut s = chars[start..end].iter().collect::<String>();
+                        if start > 0 {
+                            s = format!("...{}", s);
+                        }
+                        if end < chars.len() {
+                            s = format!("{}...", s);
+                        }
+                        s
+                    } else if chars.len() > 100 {
+                        format!("{}...", chars.iter().take(100).collect::<String>())
+                    } else {
+                        chars.iter().collect::<String>()
+                    }
                 } else if chars.len() > 100 {
                     format!("{}...", chars.iter().take(100).collect::<String>())
                 } else {
                     chars.iter().collect::<String>()
+                };
+
+                let src_desc = format!("Screen OCR [{}]", monitor_label);
+
+                if has_banned && !words.is_empty() {
+                    (
+                        true,
+                        words[0].clone(),
+                        "twitch_hate_speech".to_string(),
+                        src_desc,
+                        short_snippet,
+                    )
+                } else {
+                    (false, String::new(), String::new(), src_desc, short_snippet)
                 }
-            } else if chars.len() > 100 {
-                format!("{}...", chars.iter().take(100).collect::<String>())
-            } else {
-                chars.iter().collect::<String>()
             };
-
-            let src_desc = format!("Screen OCR [{}]", monitor_label);
-
-            if has_banned && !words.is_empty() {
-                (true, words[0].clone(), "twitch_hate_speech".to_string(), src_desc, short_snippet)
-            } else {
-                (false, String::new(), String::new(), src_desc, short_snippet)
-            }
-        };
 
         let activated = found;
         let circumstances = if activated {
@@ -875,16 +957,44 @@ impl VisionEngine {
         let threshold_pct = self.get_nsfw_threshold();
 
         let (is_nsfw, nsfw_score, nsfw_label, category, source) = if force_simulated {
-            (true, 0.94, "Pornography".to_string(), "Pornography".to_string(), "Simulated test frame".to_string())
+            (
+                true,
+                0.94,
+                "Pornography".to_string(),
+                "Pornography".to_string(),
+                "Simulated test frame".to_string(),
+            )
         } else {
-            let captured = Self::capture_screen(Some(m_idx)).map(|(w, h, px)| (w, h, px, true, format!("Screen Capture [{}]", monitor_label)));
+            let captured = Self::capture_screen(Some(m_idx)).map(|(w, h, px)| {
+                (
+                    w,
+                    h,
+                    px,
+                    true,
+                    format!("Screen Capture [{}]", monitor_label),
+                )
+            });
 
             match captured {
                 Some((w, h, ref px, is_top_down, src_name)) => {
-                    let cascade_res = self.cascade.classify_frame(px, w, h, threshold_pct, is_top_down);
-                    (cascade_res.is_violation, cascade_res.score, cascade_res.primary_label.clone(), cascade_res.primary_label.clone(), src_name)
+                    let cascade_res =
+                        self.cascade
+                            .classify_frame(px, w, h, threshold_pct, is_top_down);
+                    (
+                        cascade_res.is_violation,
+                        cascade_res.score,
+                        cascade_res.primary_label.clone(),
+                        cascade_res.primary_label.clone(),
+                        src_name,
+                    )
                 }
-                None => (false, 0.0, "Frame empty".to_string(), "Neutral".to_string(), format!("Screen Capture [{}]", monitor_label)),
+                None => (
+                    false,
+                    0.0,
+                    "Frame empty".to_string(),
+                    "Neutral".to_string(),
+                    format!("Screen Capture [{}]", monitor_label),
+                ),
             }
         };
 
@@ -899,7 +1009,11 @@ impl VisionEngine {
             test_type: "nsfw".to_string(),
             activated,
             score: nsfw_score,
-            matched_rule: if activated { category } else { "none".to_string() },
+            matched_rule: if activated {
+                category
+            } else {
+                "none".to_string()
+            },
             matched_item: nsfw_label,
             circumstances,
             gpu_info: self.gpu_name.clone(),
@@ -911,12 +1025,31 @@ impl VisionEngine {
         let m_idx = self.get_selected_monitor();
         let captured = Self::capture_screen(Some(m_idx)).map(|(w, h, px)| (w, h, px, true));
 
-        let (is_nsfw, nsfw_score, nsfw_label, nsfw_category, width, height, px_opt) = match captured {
+        let (is_nsfw, nsfw_score, nsfw_label, nsfw_category, width, height, px_opt) = match captured
+        {
             Some((w, h, px, is_top_down)) => {
-                let cascade_res = self.cascade.classify_frame(&px, w, h, self.get_nsfw_threshold(), is_top_down);
-                (cascade_res.is_violation, cascade_res.score, cascade_res.primary_label.clone(), cascade_res.primary_label.clone(), w, h, Some(px))
+                let cascade_res =
+                    self.cascade
+                        .classify_frame(&px, w, h, self.get_nsfw_threshold(), is_top_down);
+                (
+                    cascade_res.is_violation,
+                    cascade_res.score,
+                    cascade_res.primary_label.clone(),
+                    cascade_res.primary_label.clone(),
+                    w,
+                    h,
+                    Some(px),
+                )
             }
-            None => (false, 0.0, "Frame clean".to_string(), "Neutral".to_string(), 0, 0, None),
+            None => (
+                false,
+                0.0,
+                "Frame clean".to_string(),
+                "Neutral".to_string(),
+                0,
+                0,
+                None,
+            ),
         };
 
         let (has_banned_text, banned_matches, _) = if let Some(ref px) = px_opt {
@@ -986,7 +1119,10 @@ mod tests {
         let monitors = VisionEngine::enumerate_monitors();
         println!("\n=== Detected Monitors: {} ===", monitors.len());
         for m in &monitors {
-            println!("Testing Monitor {}: {} ({}x{} at {},{})", m.index, m.name, m.width, m.height, m.x, m.y);
+            println!(
+                "Testing Monitor {}: {} ({}x{} at {},{})",
+                m.index, m.name, m.width, m.height, m.x, m.y
+            );
             if let Some((w, h, px)) = VisionEngine::capture_screen(Some(m.index)) {
                 println!("Captured frame: {}x{}, buffer size: {}", w, h, px.len());
                 let text = VisionEngine::recognize_text_from_bgra(w, h, &px);
@@ -1005,7 +1141,11 @@ mod tests {
             if let Some((w, h, px)) = VisionEngine::capture_screen(Some(m.index)) {
                 let start = std::time::Instant::now();
                 let text = VisionEngine::recognize_text_from_bgra(w, h, &px);
-                println!("Tokio test OCR finished in {:.2}s: text len={}", start.elapsed().as_secs_f32(), text.len());
+                println!(
+                    "Tokio test OCR finished in {:.2}s: text len={}",
+                    start.elapsed().as_secs_f32(),
+                    text.len()
+                );
             }
         }
     }
@@ -1015,11 +1155,12 @@ mod tests {
         let lex = Arc::new(Mutex::new(LexicalEngine::new()));
         let vis = Arc::new(VisionEngine::new(lex));
         let vis_clone = vis.clone();
-        let res = tokio::task::spawn_blocking(move || {
-            vis_clone.run_ocr_test(None)
-        }).await;
+        let res = tokio::task::spawn_blocking(move || vis_clone.run_ocr_test(None)).await;
         match res {
-            Ok(r) => println!("spawn_blocking result: activated={}, circ={}", r.activated, r.circumstances),
+            Ok(r) => println!(
+                "spawn_blocking result: activated={}, circ={}",
+                r.activated, r.circumstances
+            ),
             Err(e) => println!("spawn_blocking PANICKED: {:?}", e),
         }
     }

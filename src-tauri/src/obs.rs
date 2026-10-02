@@ -810,15 +810,25 @@ impl OBSClient {
                             || kind.contains("dshow");
 
                         if is_capture && scanned_sources.insert(source_name.clone()) {
-                            // Cleanly remove any dead/zombie filter on this source first to force OBS to instantiate the C++ filter object
-                            let _ = self.send_request("RemoveSourceFilter", json!({
-                                "sourceName": source_name,
-                                "filterName": "BlewRed_GPU_Censor"
-                            })).await;
-                            let _ = self.send_request("RemoveSourceFilter", json!({
-                                "sourceName": source_name,
-                                "filterName": "blewred_GPU_Censor"
-                            })).await;
+                            // Cleanly remove any dead/zombie blewred_filter on this source first
+                            if let Ok(flt_res) = self.send_request("GetSourceFilterList", json!({ "sourceName": source_name })).await {
+                                if let Some(flts) = flt_res["filters"].as_array() {
+                                    for f in flts {
+                                        let fname = f["filterName"].as_str().unwrap_or("");
+                                        let fkind = f["filterKind"].as_str().unwrap_or("");
+                                        if fkind == "blewred_filter" || fname.to_lowercase().contains("blewred") {
+                                            let _ = self.send_request("RemoveSourceFilter", json!({
+                                                "sourceName": source_name,
+                                                "filterName": fname
+                                            })).await;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if !enabled {
+                                continue;
+                            }
 
                             let create_res = self.send_request("CreateSourceFilter", json!({
                                 "sourceName": source_name,
@@ -831,7 +841,7 @@ impl OBSClient {
 
                             match create_res {
                                 Ok(_) => {
-                                    println!("[OBSClient] Successfully attached blewred_filter to source '{}' (enabled: {})", source_name, enabled);
+                                    println!("[OBSClient] Successfully attached blewred_filter to active source '{}'", source_name);
                                     attached.push(format!("{} (active)", source_name));
                                 }
                                 Err(e) => {
@@ -839,10 +849,8 @@ impl OBSClient {
                                 }
                             }
 
-                            // If this was an active/enabled capture source, stop here to avoid UDP port 51799 socket binding collisions!
-                            if enabled {
-                                break;
-                            }
+                            // Attached to the active capture source
+                            break;
                         }
                     }
                 }

@@ -1,6 +1,7 @@
 #include "obs-plugin-api.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
@@ -118,8 +119,9 @@ static const char *BLEWRED_EFFECT_SRC =
 "                is_censored = true;\n"
 "\n"
 "                if (show_debug > 0) {\n"
-"                    float2 dist_min = (vert_in.uv - float2(x1, y1)) * image_size;\n"
-"                    float2 dist_max = (float2(x2, y2) - vert_in.uv) * image_size;\n"
+"                    float2 safe_sz = max(image_size, float2(320.0, 180.0));\n"
+"                    float2 dist_min = (vert_in.uv - float2(x1, y1)) * safe_sz;\n"
+"                    float2 dist_max = (float2(x2, y2) - vert_in.uv) * safe_sz;\n"
 "                    float d = min(min(dist_min.x, dist_min.y), min(dist_max.x, dist_max.y));\n"
 "                    if (d <= 2.5) {\n"
 "                        is_border = true;\n"
@@ -138,10 +140,12 @@ static const char *BLEWRED_EFFECT_SRC =
 "        return float4(0.0, 1.0, 0.4, 1.0);\n"
 "    }\n"
 "\n"
+"    float2 safe_sz = max(image_size, float2(320.0, 180.0));\n"
+"\n"
 "    if (censor_mode == 0) {\n"
 "        // Smart Gaussian Defocus Blur (13-sample circular kernel)\n"
 "        float4 col = float4(0.0, 0.0, 0.0, 0.0);\n"
-"        float2 step = max(float2(2.0, 2.0), float2(blur_radius, blur_radius)) / image_size;\n"
+"        float2 step = max(float2(2.0, 2.0), float2(blur_radius, blur_radius)) / safe_sz;\n"
 "\n"
 "        col += image.Sample(def_sampler, vert_in.uv) * 0.16;\n"
 "        col += image.Sample(def_sampler, vert_in.uv + float2( step.x, 0.0)) * 0.12;\n"
@@ -159,7 +163,7 @@ static const char *BLEWRED_EFFECT_SRC =
 "        return col;\n"
 "    } else if (censor_mode == 1) {\n"
 "        // Pixelate / Mosaic\n"
-"        float2 psize = max(float2(4.0, 4.0), float2(pixel_size, pixel_size)) / image_size;\n"
+"        float2 psize = max(float2(4.0, 4.0), float2(pixel_size, pixel_size)) / safe_sz;\n"
 "        float2 block_uv = (floor(vert_in.uv / psize) + 0.5) * psize;\n"
 "        return image.Sample(def_sampler, block_uv);\n"
 "    } else if (censor_mode == 2) {\n"
@@ -205,6 +209,234 @@ typedef struct {
 } blewred_shm_header_t;
 #pragma pack(pop)
 
+/* --------------------------------------------------------------------------
+ * Locale-independent float parsing (prevents Russian locale '.' vs ',' bugs)
+ * -------------------------------------------------------------------------- */
+static float parse_float_fast(const char *str)
+{
+    if (!str) return 0.0f;
+    while (*str == ' ' || *str == '\t') str++;
+    float sign = 1.0f;
+    if (*str == '-') { sign = -1.0f; str++; }
+    else if (*str == '+') { str++; }
+    
+    double val = 0.0;
+    while (*str >= '0' && *str <= '9') {
+        val = val * 10.0 + (*str - '0');
+        str++;
+    }
+    if (*str == '.' || *str == ',') {
+        str++;
+        double factor = 0.1;
+        while (*str >= '0' && *str <= '9') {
+            val += (*str - '0') * factor;
+            factor *= 0.1;
+            str++;
+        }
+    }
+    return (float)(sign * val);
+}
+
+static float parse_json_obj_field(const char *obj_start, const char *obj_end, const char *key, bool *found)
+{
+    if (found) *found = false;
+    size_t klen = strlen(key);
+    const char *p = obj_start;
+    while (p < obj_end) {
+        const char *match = strstr(p, key);
+        if (!match || match >= obj_end) break;
+        
+        const char *val = match + klen;
+        while (val < obj_end && (*val == ' ' || *val == ':' || *val == '\t')) {
+            val++;
+        }
+        if (val < obj_end && ((*val >= '0' && *val <= '9') || *val == '-' || *val == '+')) {
+            if (found) *found = true;
+            return parse_float_fast(val);
+        }
+        p = match + klen;
+    }
+    return 0.0f;
+}
+
+/* --------------------------------------------------------------------------
+ * Global Singleton UDP Receiver & Shared Box State
+ * Resolves multi-source socket port 51799 binding collisions across filters.
+ * -------------------------------------------------------------------------- */
+typedef struct {
+    CRITICAL_SECTION cs;
+    SOCKET sock;
+    int port;
+    LONG ref_count;
+    
+    // Shared incoming state
+    bool censor_all;
+    uint32_t target_box_count;
+    struct vec4 target_boxes[BLEWRED_MAX_BOXES];
+    uint64_t last_packet_time;
+    uint64_t last_heartbeat_time;
+    uint64_t last_box_seen_time;
+    uint64_t last_parse_log;
+} blewred_shared_udp_t;
+
+static blewred_shared_udp_t g_shared_udp = {0};
+
+static void parse_json_boxes_to_shared(const char *buf, uint64_t now)
+{
+    EnterCriticalSection(&g_shared_udp.cs);
+    
+    g_shared_udp.censor_all = false;
+    g_shared_udp.target_box_count = 0;
+    
+    if (strstr(buf, "\"censor_all\":true") || strstr(buf, "\"censor_all\": true")) {
+        g_shared_udp.censor_all = true;
+    }
+    
+    const char *boxes_start = strstr(buf, "\"boxes\":");
+    if (boxes_start) {
+        const char *arr_open = strchr(boxes_start, '[');
+        if (arr_open) {
+            const char *arr_end = NULL;
+            int depth = 0;
+            for (const char *scan = arr_open; *scan; scan++) {
+                if (*scan == '[') depth++;
+                else if (*scan == ']') {
+                    depth--;
+                    if (depth == 0) { arr_end = scan; break; }
+                }
+            }
+            if (!arr_end) arr_end = buf + strlen(buf);
+
+            const char *p = arr_open + 1;
+            while (*p && p < arr_end && g_shared_udp.target_box_count < BLEWRED_MAX_BOXES) {
+                const char *obj_start = strchr(p, '{');
+                if (!obj_start || obj_start >= arr_end) break;
+                
+                const char *obj_end = strchr(obj_start, '}');
+                if (!obj_end || obj_end >= arr_end) break;
+                
+                bool f_x1 = false, f_y1 = false, f_x2 = false, f_y2 = false;
+                float x1 = parse_json_obj_field(obj_start, obj_end, "\"x1\"", &f_x1);
+                float y1 = parse_json_obj_field(obj_start, obj_end, "\"y1\"", &f_y1);
+                float x2 = parse_json_obj_field(obj_start, obj_end, "\"x2\"", &f_x2);
+                float y2 = parse_json_obj_field(obj_start, obj_end, "\"y2\"", &f_y2);
+                
+                if (f_x1 && f_y1 && f_x2 && f_y2) {
+                    if (x1 < 0.0f) x1 = 0.0f;
+                    if (y1 < 0.0f) y1 = 0.0f;
+                    if (x2 > 1.0f) x2 = 1.0f;
+                    if (y2 > 1.0f) y2 = 1.0f;
+                    
+                    if (x2 > x1 && y2 > y1) {
+                        vec4_set(&g_shared_udp.target_boxes[g_shared_udp.target_box_count], x1, y1, x2, y2);
+                        g_shared_udp.target_box_count++;
+                    }
+                }
+                
+                p = obj_end + 1;
+            }
+            
+            if (g_shared_udp.target_box_count > 0) {
+                g_shared_udp.last_box_seen_time = now;
+            }
+        }
+    }
+    
+    g_shared_udp.last_packet_time = now;
+    
+    if (g_shared_udp.target_box_count > 0 || g_shared_udp.censor_all) {
+        if (now - g_shared_udp.last_parse_log > 2000) {
+            blog(LOG_INFO, "[BlewRed Filter] Active packet parsed: %u boxes (censor_all=%d, box0=[%.2f,%.2f,%.2f,%.2f])",
+                 g_shared_udp.target_box_count, g_shared_udp.censor_all ? 1 : 0,
+                 g_shared_udp.target_boxes[0].x, g_shared_udp.target_boxes[0].y,
+                 g_shared_udp.target_boxes[0].z, g_shared_udp.target_boxes[0].w);
+            g_shared_udp.last_parse_log = now;
+        }
+    }
+    
+    LeaveCriticalSection(&g_shared_udp.cs);
+}
+
+static void shared_udp_init(void)
+{
+    if (InterlockedIncrement(&g_shared_udp.ref_count) == 1) {
+        InitializeCriticalSection(&g_shared_udp.cs);
+        g_shared_udp.port = BLEWRED_DEFAULT_PORT;
+        g_shared_udp.sock = INVALID_SOCKET;
+        
+        WSADATA wsa;
+        WSAStartup(MAKEWORD(2, 2), &wsa);
+        
+        g_shared_udp.sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        if (g_shared_udp.sock != INVALID_SOCKET) {
+            u_long mode = 1;
+            ioctlsocket(g_shared_udp.sock, FIONBIO, &mode);
+            
+            BOOL reuse = TRUE;
+            setsockopt(g_shared_udp.sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse));
+            
+            struct sockaddr_in addr;
+            memset(&addr, 0, sizeof(addr));
+            addr.sin_family = AF_INET;
+            addr.sin_port = htons(g_shared_udp.port);
+            addr.sin_addr.s_addr = htonl(INADDR_ANY);
+            
+            if (bind(g_shared_udp.sock, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+                blog(LOG_WARNING, "[BlewRed Filter] Could not bind shared UDP port %d: %d", g_shared_udp.port, WSAGetLastError());
+            } else {
+                blog(LOG_INFO, "[BlewRed Filter] Bound shared UDP receiver on 0.0.0.0:%d", g_shared_udp.port);
+            }
+        }
+    }
+}
+
+static void shared_udp_cleanup(void)
+{
+    if (InterlockedDecrement(&g_shared_udp.ref_count) == 0) {
+        if (g_shared_udp.sock != INVALID_SOCKET) {
+            closesocket(g_shared_udp.sock);
+            g_shared_udp.sock = INVALID_SOCKET;
+        }
+        DeleteCriticalSection(&g_shared_udp.cs);
+    }
+}
+
+static void shared_udp_poll(uint64_t now)
+{
+    if (g_shared_udp.sock == INVALID_SOCKET) return;
+    
+    // Heartbeat every 500ms
+    if (now - g_shared_udp.last_heartbeat_time >= 500) {
+        struct sockaddr_in dest;
+        memset(&dest, 0, sizeof(dest));
+        dest.sin_family = AF_INET;
+        dest.sin_port = htons(BLEWRED_HEARTBEAT_PORT);
+        dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+        
+        const char *hb = "{\"type\":\"obs_filter_heartbeat\",\"status\":\"obs_attached\",\"version\":\"1.2.0\"}";
+        sendto(g_shared_udp.sock, hb, (int)strlen(hb), 0, (struct sockaddr*)&dest, sizeof(dest));
+        g_shared_udp.last_heartbeat_time = now;
+    }
+    
+    // Poll non-blocking UDP packets
+    char buf[8192];
+    struct sockaddr_in sender;
+    int sender_len = sizeof(sender);
+    
+    while (1) {
+        int len = recvfrom(g_shared_udp.sock, buf, sizeof(buf) - 1, 0, (struct sockaddr*)&sender, &sender_len);
+        if (len > 0) {
+            buf[len] = '\0';
+            parse_json_boxes_to_shared(buf, now);
+        } else {
+            break;
+        }
+    }
+}
+
+/* --------------------------------------------------------------------------
+ * Per-Filter Instance Data
+ * -------------------------------------------------------------------------- */
 typedef struct {
     obs_source_t *context;
     gs_effect_t *effect;
@@ -229,7 +461,6 @@ typedef struct {
     bool show_debug;
     int port;
     
-    SOCKET sock;
     CRITICAL_SECTION cs;
     
     struct vec4 current_boxes[BLEWRED_MAX_BOXES];
@@ -238,10 +469,9 @@ typedef struct {
     uint32_t target_box_count;
     bool censor_all;
     uint64_t last_packet_time;
-    uint64_t last_heartbeat_time;
-    uint64_t last_box_seen_time; // Persistence decay hold timer
-    uint32_t fade_counter;       // Counts frames since boxes cleared for smooth fade-out
-    uint32_t held_box_count;     // Box count preserved during fade-out
+    uint64_t last_box_seen_time;
+    uint32_t fade_counter;
+    uint32_t held_box_count;
     
     // Native source video capture for AI Core
     gs_texrender_t *texrender;
@@ -258,112 +488,6 @@ static const char *blewred_get_name(void *unused)
     return "BlewRed AI Smart Shield";
 }
 
-static void send_heartbeat(blewred_filter_data_t *filter)
-{
-    if (filter->sock == INVALID_SOCKET) return;
-    
-    struct sockaddr_in dest;
-    memset(&dest, 0, sizeof(dest));
-    dest.sin_family = AF_INET;
-    dest.sin_port = htons(BLEWRED_HEARTBEAT_PORT);
-    dest.sin_addr.s_addr = inet_addr("127.0.0.1");
-    
-    const char *hb = "{\"type\":\"obs_filter_heartbeat\",\"status\":\"obs_attached\",\"version\":\"1.2.0\"}";
-    sendto(filter->sock, hb, (int)strlen(hb), 0, (struct sockaddr*)&dest, sizeof(dest));
-}
-
-static void parse_json_boxes(blewred_filter_data_t *filter, const char *buf)
-{
-    EnterCriticalSection(&filter->cs);
-    
-    filter->censor_all = false;
-    filter->target_box_count = 0;
-    
-    if (strstr(buf, "\"censor_all\":true")) {
-        filter->censor_all = true;
-    }
-    
-    const char *boxes_start = strstr(buf, "\"boxes\":[");
-    if (boxes_start) {
-        const char *arr_end = NULL;
-        /* Find the matching ']' for this boxes array to bound our search */
-        int depth = 0;
-        for (const char *scan = boxes_start + 8; *scan; scan++) {
-            if (*scan == '[') depth++;
-            else if (*scan == ']') {
-                depth--;
-                if (depth == 0) { arr_end = scan; break; }
-            }
-        }
-        if (!arr_end) arr_end = buf + strlen(buf);
-
-        const char *p = boxes_start + 9;
-        while (*p && p < arr_end && filter->target_box_count < BLEWRED_MAX_BOXES) {
-            /* Find the next '{' object boundary within the array */
-            const char *obj_start = strchr(p, '{');
-            if (!obj_start || obj_start >= arr_end) break;
-            
-            const char *obj_end = strchr(obj_start, '}');
-            if (!obj_end || obj_end >= arr_end) break;
-            
-            /* Search for x1/y1/x2/y2 ONLY within this single object {...} */
-            float x1 = 0, y1 = 0, x2 = 0, y2 = 0;
-            int found = 0;
-            
-            const char *scan = obj_start;
-            while (scan < obj_end) {
-                if (scan[0] == '"' && scan[1] == 'x' && scan[2] == '1' && scan[3] == '"' && scan[4] == ':') {
-                    x1 = (float)atof(scan + 5);
-                    found |= 1;
-                } else if (scan[0] == '"' && scan[1] == 'y' && scan[2] == '1' && scan[3] == '"' && scan[4] == ':') {
-                    y1 = (float)atof(scan + 5);
-                    found |= 2;
-                } else if (scan[0] == '"' && scan[1] == 'x' && scan[2] == '2' && scan[3] == '"' && scan[4] == ':') {
-                    x2 = (float)atof(scan + 5);
-                    found |= 4;
-                } else if (scan[0] == '"' && scan[1] == 'y' && scan[2] == '2' && scan[3] == '"' && scan[4] == ':') {
-                    y2 = (float)atof(scan + 5);
-                    found |= 8;
-                }
-                scan++;
-            }
-            
-            if (found == 15) {
-                vec4_set(&filter->target_boxes[filter->target_box_count], x1, y1, x2, y2);
-                
-                /* Initialize current box instantly if this is a new detection slot */
-                if (filter->current_box_count <= filter->target_box_count) {
-                    filter->current_boxes[filter->target_box_count] = filter->target_boxes[filter->target_box_count];
-                }
-                
-                filter->target_box_count++;
-            }
-            
-            p = obj_end + 1;
-        }
-        
-        if (filter->target_box_count > 0) {
-            filter->last_box_seen_time = GetTickCount64();
-            filter->fade_counter = 0; /* Reset fade on fresh detections */
-        }
-    }
-    
-    if (filter->target_box_count > 0 || filter->censor_all) {
-        static uint64_t last_parse_log = 0;
-        uint64_t now_log = GetTickCount64();
-        if (now_log - last_parse_log > 2000) {
-            blog(LOG_INFO, "[BlewRed Filter] Active packet parsed: %u boxes (censor_all=%d, box0=[%.2f,%.2f,%.2f,%.2f])",
-                 filter->target_box_count, filter->censor_all ? 1 : 0,
-                 filter->target_boxes[0].x, filter->target_boxes[0].y,
-                 filter->target_boxes[0].z, filter->target_boxes[0].w);
-            last_parse_log = now_log;
-        }
-    }
-    
-    filter->last_packet_time = GetTickCount64();
-    LeaveCriticalSection(&filter->cs);
-}
-
 static void blewred_video_tick(void *data, float seconds)
 {
     UNUSED_PARAMETER(seconds);
@@ -372,28 +496,21 @@ static void blewred_video_tick(void *data, float seconds)
     
     uint64_t now = GetTickCount64();
     
-    // Heartbeat every 500 ms
-    if (now - filter->last_heartbeat_time >= 500) {
-        send_heartbeat(filter);
-        filter->last_heartbeat_time = now;
-    }
+    // Poll singleton UDP receiver
+    shared_udp_poll(now);
     
-    // Poll non-blocking UDP socket
-    if (filter->sock != INVALID_SOCKET) {
-        char buf[8192];
-        struct sockaddr_in sender;
-        int sender_len = sizeof(sender);
-        
-        while (1) {
-            int len = recvfrom(filter->sock, buf, sizeof(buf) - 1, 0, (struct sockaddr*)&sender, &sender_len);
-            if (len > 0) {
-                buf[len] = '\0';
-                parse_json_boxes(filter, buf);
-            } else {
-                break;
-            }
-        }
+    // Sync latest target boxes from shared UDP state
+    EnterCriticalSection(&g_shared_udp.cs);
+    filter->censor_all = g_shared_udp.censor_all;
+    filter->target_box_count = g_shared_udp.target_box_count;
+    for (uint32_t i = 0; i < g_shared_udp.target_box_count; i++) {
+        filter->target_boxes[i] = g_shared_udp.target_boxes[i];
     }
+    filter->last_packet_time = g_shared_udp.last_packet_time;
+    if (g_shared_udp.target_box_count > 0) {
+        filter->last_box_seen_time = g_shared_udp.last_box_seen_time;
+    }
+    LeaveCriticalSection(&g_shared_udp.cs);
     
     // Exponential moving average smoothing & persistence decay hold for bounding boxes
     EnterCriticalSection(&filter->cs);
@@ -455,32 +572,36 @@ static void blewred_video_render(void *data, gs_effect_t *effect)
 
     // 1. CAPTURE & STREAM SOURCE VIDEO FRAME TO SHARED MEMORY (up to 60 FPS)
     if (filter->texrender && filter->stagesurf && filter->shm_ptr && (now - filter->last_capture_time >= 15)) {
-        filter->last_capture_time = now;
-        
-        if (target && gs_texrender_begin(filter->texrender, BLEWRED_SHM_WIDTH, BLEWRED_SHM_HEIGHT)) {
-            struct vec4 black;
-            vec4_set(&black, 0.0f, 0.0f, 0.0f, 0.0f);
-            gs_clear(GS_CLEAR_COLOR, &black, 0.0f, 0);
-            gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
+        static uint64_t last_global_capture_time = 0;
+        if (now - last_global_capture_time >= 15) {
+            last_global_capture_time = now;
+            filter->last_capture_time = now;
             
-            obs_source_video_render(target);
-            gs_texrender_end(filter->texrender);
-            
-            gs_texture_t *tex = gs_texrender_get_texture(filter->texrender);
-            if (tex) {
-                gs_stage_texture(filter->stagesurf, tex);
-                uint8_t *mapped = NULL;
-                uint32_t linesize = 0;
-                if (gs_stagesurface_map(filter->stagesurf, &mapped, &linesize)) {
-                    blewred_shm_header_t *hdr = (blewred_shm_header_t *)filter->shm_ptr;
-                    uint8_t *dst = (uint8_t *)filter->shm_ptr + sizeof(blewred_shm_header_t);
-                    for (uint32_t y = 0; y < BLEWRED_SHM_HEIGHT; y++) {
-                        memcpy(dst + y * (BLEWRED_SHM_WIDTH * 4), mapped + y * linesize, BLEWRED_SHM_WIDTH * 4);
+            if (target && gs_texrender_begin(filter->texrender, BLEWRED_SHM_WIDTH, BLEWRED_SHM_HEIGHT)) {
+                struct vec4 black;
+                vec4_set(&black, 0.0f, 0.0f, 0.0f, 0.0f);
+                gs_clear(GS_CLEAR_COLOR, &black, 0.0f, 0);
+                gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
+                
+                obs_source_video_render(target);
+                gs_texrender_end(filter->texrender);
+                
+                gs_texture_t *tex = gs_texrender_get_texture(filter->texrender);
+                if (tex) {
+                    gs_stage_texture(filter->stagesurf, tex);
+                    uint8_t *mapped = NULL;
+                    uint32_t linesize = 0;
+                    if (gs_stagesurface_map(filter->stagesurf, &mapped, &linesize)) {
+                        blewred_shm_header_t *hdr = (blewred_shm_header_t *)filter->shm_ptr;
+                        uint8_t *dst = (uint8_t *)filter->shm_ptr + sizeof(blewred_shm_header_t);
+                        for (uint32_t y = 0; y < BLEWRED_SHM_HEIGHT; y++) {
+                            memcpy(dst + y * (BLEWRED_SHM_WIDTH * 4), mapped + y * linesize, BLEWRED_SHM_WIDTH * 4);
+                        }
+                        filter->frame_index++;
+                        hdr->frame_index = filter->frame_index;
+                        hdr->timestamp_ms = now;
+                        gs_stagesurface_unmap(filter->stagesurf);
                     }
-                    filter->frame_index++;
-                    hdr->frame_index = filter->frame_index;
-                    hdr->timestamp_ms = now;
-                    gs_stagesurface_unmap(filter->stagesurf);
                 }
             }
         }
@@ -500,8 +621,8 @@ static void blewred_video_render(void *data, gs_effect_t *effect)
         
     static uint64_t last_dbg_log = 0;
     if (now - last_dbg_log > 2000) {
-        blog(LOG_INFO, "[BlewRed Filter] SUCCESS Rendering: boxes=%u, dim=%ux%u",
-             filter->current_box_count, width, height);
+        blog(LOG_INFO, "[BlewRed Filter] SUCCESS Rendering: boxes=%u, censor_all=%d, dim=%ux%u",
+             filter->current_box_count, filter->censor_all ? 1 : 0, width, height);
         last_dbg_log = now;
     }
 
@@ -540,7 +661,7 @@ static void blewred_video_render(void *data, gs_effect_t *effect)
     }
     LeaveCriticalSection(&filter->cs);
     
-    obs_source_process_filter_tech_end(filter->context, filter->effect, 0, 0, "Draw");
+    obs_source_process_filter_tech_end(filter->context, filter->effect, width, height, "Draw");
 }
 
 static void blewred_filter_update(void *data, obs_data_t *settings)
@@ -565,7 +686,7 @@ static void *blewred_filter_create(obs_data_t *settings, obs_source_t *context)
     blewred_filter_data_t *filter = bzalloc(sizeof(*filter));
     filter->context = context;
     filter->port = BLEWRED_DEFAULT_PORT;
-    filter->censor_mode = 0; // 0 = Smart Blur by default!
+    filter->censor_mode = 0; // 0 = Smart Blur by default
     filter->blur_radius = 24.0f;
     filter->pixel_size = 20.0f;
     filter->box_padding = 15.0f;
@@ -621,30 +742,8 @@ static void *blewred_filter_create(obs_data_t *settings, obs_source_t *context)
         }
     }
     
-    // Initialize Winsock UDP socket
-    WSADATA wsa;
-    WSAStartup(MAKEWORD(2, 2), &wsa);
-    
-    filter->sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (filter->sock != INVALID_SOCKET) {
-        u_long mode = 1;
-        ioctlsocket(filter->sock, FIONBIO, &mode);
-        
-        BOOL reuse = TRUE;
-        setsockopt(filter->sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse));
-        
-        struct sockaddr_in addr;
-        memset(&addr, 0, sizeof(addr));
-        addr.sin_family = AF_INET;
-        addr.sin_port = htons(filter->port);
-        addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        
-        if (bind(filter->sock, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
-            blog(LOG_WARNING, "[BlewRed Filter] Could not bind UDP port %d: %d", filter->port, WSAGetLastError());
-        } else {
-            blog(LOG_INFO, "[BlewRed Filter] Bound UDP receiver on 0.0.0.0:%d", filter->port);
-        }
-    }
+    // Initialize Shared Singleton UDP Receiver
+    shared_udp_init();
     
     obs_source_update(context, settings);
     return filter;
@@ -654,10 +753,7 @@ static void blewred_filter_destroy(void *data)
 {
     blewred_filter_data_t *filter = (blewred_filter_data_t *)data;
     if (filter) {
-        if (filter->sock != INVALID_SOCKET) {
-            closesocket(filter->sock);
-            filter->sock = INVALID_SOCKET;
-        }
+        shared_udp_cleanup();
         
         obs_enter_graphics();
         if (filter->stagesurf) {

@@ -65,8 +65,7 @@
       "../extensions/**/*": "extensions/",
       "../config/*": "config/",
       "../plugins/**/*": "plugins/",
-      "../models/README.txt": "models/README.txt",
-      "../models/.gitkeep": "models/.gitkeep",
+      "../models/**/*": "models/",
       "../scripts/launch_browser_with_extension.bat": "launch_browser_with_extension.bat"
     },
     "icon": [

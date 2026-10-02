@@ -540,6 +540,24 @@ impl WSBridge {
         let _ = self.broadcast_tx.send(payload.to_string());
     }
 
+    pub fn broadcast_model_tuning_changed(&self, tuning: &crate::cascade::ModelProfile) {
+        let payload = json!({
+            "type": "model_tuning_changed",
+            "tuning": tuning,
+            "active_model_profile": tuning.name.clone()
+        });
+        let _ = self.broadcast_tx.send(payload.to_string());
+    }
+
+    pub fn broadcast_model_profiles_changed(&self, profiles: &[crate::cascade::ModelProfile], active_name: &str) {
+        let payload = json!({
+            "type": "model_profiles_changed",
+            "profiles": profiles,
+            "active_model_profile": active_name
+        });
+        let _ = self.broadcast_tx.send(payload.to_string());
+    }
+
     pub fn broadcast_tx(&self) -> broadcast::Sender<String> {
         self.broadcast_tx.clone()
     }
@@ -1196,6 +1214,9 @@ impl WSBridge {
                                         "ocr_status": crate::downloader::ModelDownloader::check_ocr_status(),
                                         "hide_setup_guide": crate::settings::get_cached_settings().hide_setup_guide,
                                         "language": crate::settings::get_cached_settings().language,
+                                        "model_tuning": vision_client.get_model_tuning(),
+                                        "model_profiles": crate::settings::load_saved_model_profiles(),
+                                        "active_model_profile": crate::settings::get_cached_settings().active_model_profile,
                                         "gpu_info": vision_client.gpu_name.clone(),
                                         "events": [
                                             {
@@ -1275,6 +1296,92 @@ impl WSBridge {
                                         "categories": cats
                                     });
                                     let _ = tx_bcast.send(resp.to_string());
+                                } else if msg_type == "get_model_profiles" {
+                                    let profiles = crate::settings::load_saved_model_profiles();
+                                    let active = crate::settings::get_cached_settings().active_model_profile;
+                                    let resp = json!({
+                                        "type": "model_profiles_changed",
+                                        "profiles": profiles,
+                                        "active_model_profile": active
+                                    });
+                                    let mut s = sink_mutex.lock().await;
+                                    let _ = s.send(Message::Text(resp.to_string().into())).await;
+                                } else if msg_type == "save_model_profile" {
+                                    if let Some(prof_val) = val.get("profile") {
+                                        if let Ok(profile) = serde_json::from_value::<crate::cascade::ModelProfile>(prof_val.clone()) {
+                                            match crate::settings::save_user_model_profile(&profile) {
+                                                Ok(updated) => {
+                                                    vision_client.set_model_tuning(profile.clone());
+                                                    let resp_tuning = json!({
+                                                        "type": "model_tuning_changed",
+                                                        "tuning": profile,
+                                                        "active_model_profile": profile.name.clone()
+                                                    });
+                                                    let _ = tx_bcast.send(resp_tuning.to_string());
+                                                    let resp_list = json!({
+                                                        "type": "model_profiles_changed",
+                                                        "profiles": updated,
+                                                        "active_model_profile": profile.name
+                                                    });
+                                                    let _ = tx_bcast.send(resp_list.to_string());
+                                                }
+                                                Err(e) => {
+                                                    eprintln!("[WSBridge] Failed to save model profile: {}", e);
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else if msg_type == "delete_model_profile" {
+                                    if let Some(name) = val["name"].as_str() {
+                                        match crate::settings::delete_user_model_profile(name) {
+                                            Ok(updated) => {
+                                                let active_tuning = vision_client.get_model_tuning();
+                                                let resp_tuning = json!({
+                                                    "type": "model_tuning_changed",
+                                                    "tuning": active_tuning,
+                                                    "active_model_profile": "Gaming"
+                                                });
+                                                let _ = tx_bcast.send(resp_tuning.to_string());
+                                                let resp_list = json!({
+                                                    "type": "model_profiles_changed",
+                                                    "profiles": updated,
+                                                    "active_model_profile": "Gaming"
+                                                });
+                                                let _ = tx_bcast.send(resp_list.to_string());
+                                            }
+                                            Err(e) => {
+                                                eprintln!("[WSBridge] Failed to delete model profile: {}", e);
+                                            }
+                                        }
+                                    }
+                                } else if msg_type == "open_profiles_folder" {
+                                    let _ = crate::settings::open_profiles_folder_in_explorer();
+                                } else if msg_type == "get_model_tuning" {
+                                    let tuning = vision_client.get_model_tuning();
+                                    let active = crate::settings::get_cached_settings().active_model_profile;
+                                    let resp = json!({
+                                        "type": "model_tuning_changed",
+                                        "tuning": tuning,
+                                        "active_model_profile": active
+                                    });
+                                    let mut s = sink_mutex.lock().await;
+                                    let _ = s.send(Message::Text(resp.to_string().into())).await;
+                                } else if msg_type == "set_model_tuning" {
+                                    if let Some(t_val) = val.get("tuning") {
+                                        if let Ok(tuning) = serde_json::from_value::<crate::cascade::ModelProfile>(t_val.clone()) {
+                                            vision_client.set_model_tuning(tuning.clone());
+                                            crate::settings::update_cached_settings(|s| {
+                                                s.model_tuning = tuning.clone();
+                                                s.active_model_profile = tuning.name.clone();
+                                            });
+                                            let resp = json!({
+                                                "type": "model_tuning_changed",
+                                                "tuning": tuning,
+                                                "active_model_profile": tuning.name.clone()
+                                            });
+                                            let _ = tx_bcast.send(resp.to_string());
+                                        }
+                                    }
                                 } else if msg_type == "set_monitor" {
                                     let raw_idx = val["monitor_index"].as_i64().unwrap_or(0) as i32;
                                     let monitors = VisionEngine::enumerate_monitors();
