@@ -28,6 +28,14 @@ pub struct MonitorInfo {
     pub width: i32,
     pub height: i32,
     pub is_primary: bool,
+    #[serde(default)]
+    pub work_x: i32,
+    #[serde(default)]
+    pub work_y: i32,
+    #[serde(default)]
+    pub work_width: i32,
+    #[serde(default)]
+    pub work_height: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -475,6 +483,11 @@ impl VisionEngine {
                         format!("Monitor {} — {}×{}", index + 1, width, height)
                     };
 
+                    let work_width = mi.rcWork.right - mi.rcWork.left;
+                    let work_height = mi.rcWork.bottom - mi.rcWork.top;
+                    let work_x = mi.rcWork.left;
+                    let work_y = mi.rcWork.top;
+
                     list.push(MonitorInfo {
                         index,
                         id: dev_name,
@@ -484,6 +497,10 @@ impl VisionEngine {
                         width,
                         height,
                         is_primary,
+                        work_x,
+                        work_y,
+                        work_width,
+                        work_height,
                     });
                 }
                 1
@@ -511,6 +528,10 @@ impl VisionEngine {
                 width: 1920,
                 height: 1080,
                 is_primary: true,
+                work_x: 0,
+                work_y: 0,
+                work_width: 1920,
+                work_height: 1040,
             }]
         }
     }

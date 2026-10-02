@@ -322,6 +322,176 @@ pub fn emit_lookahead_preview_frame(data: &crate::lookahead::LookaheadPreviewDat
     }
 }
 
+static AUDIT_WINDOW_VISIBLE: AtomicBool = AtomicBool::new(false);
+
+pub fn get_or_create_audit_window(app: &tauri::AppHandle) -> Option<tauri::WebviewWindow> {
+    if let Some(w) = app.get_webview_window("audit_window") {
+        return Some(w);
+    }
+    println!("[Audit] 'audit_window' window not found, building dynamically...");
+    match tauri::WebviewWindowBuilder::new(app, "audit_window", tauri::WebviewUrl::App("audit_window.html".into()))
+        .title("blewred")
+        .inner_size(960.0, 620.0)
+        .min_inner_size(680.0, 400.0)
+        .center()
+        .resizable(true)
+        .always_on_top(false)
+        .decorations(false)
+        .transparent(false)
+        .skip_taskbar(false)
+        .visible(false)
+        .build()
+    {
+        Ok(w) => {
+            if let Ok(icon) = tauri::image::Image::from_bytes(include_bytes!("../icons/128x128.png")) {
+                let _ = w.set_icon(icon);
+            }
+            Some(w)
+        }
+        Err(e) => {
+            eprintln!("[Audit] Failed to dynamically build audit_window: {}", e);
+            None
+        }
+    }
+}
+
+pub fn show_audit_window_func() {
+    AUDIT_WINDOW_VISIBLE.store(true, Ordering::SeqCst);
+    if let Some(app) = get_app_handle() {
+        if let Some(w) = get_or_create_audit_window(app) {
+            let _ = w.unminimize();
+            let _ = w.show();
+            let _ = w.set_focus();
+        }
+    }
+}
+
+pub fn hide_audit_window_func() {
+    AUDIT_WINDOW_VISIBLE.store(false, Ordering::SeqCst);
+    if let Some(app) = get_app_handle() {
+        if let Some(w) = app.get_webview_window("audit_window") {
+            let _ = w.hide();
+        }
+    }
+}
+
+pub fn toggle_audit_window_func() -> bool {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0);
+    let prev = LAST_TOGGLE_TIME_MS.load(Ordering::SeqCst);
+    if now.saturating_sub(prev) < 350 {
+        return is_audit_window_visible();
+    }
+    LAST_TOGGLE_TIME_MS.store(now, Ordering::SeqCst);
+
+    let is_vis = is_audit_window_visible();
+    if is_vis {
+        hide_audit_window_func();
+        false
+    } else {
+        show_audit_window_func();
+        true
+    }
+}
+
+pub fn is_audit_window_visible() -> bool {
+    if let Some(app) = get_app_handle() {
+        if let Some(w) = app.get_webview_window("audit_window") {
+            return w.is_visible().unwrap_or(false);
+        }
+    }
+    AUDIT_WINDOW_VISIBLE.load(Ordering::SeqCst)
+}
+
+pub fn get_or_create_mode_hud_window(app: &tauri::AppHandle) -> Option<tauri::WebviewWindow> {
+    if let Some(w) = app.get_webview_window("mode_hud") {
+        return Some(w);
+    }
+    println!("[ModeHUD] 'mode_hud' window not found, building dynamically...");
+    match tauri::WebviewWindowBuilder::new(app, "mode_hud", tauri::WebviewUrl::App("mode_hud.html".into()))
+        .title("blewred")
+        .inner_size(360.0, 130.0)
+        .resizable(false)
+        .always_on_top(true)
+        .decorations(false)
+        .transparent(true)
+        .skip_taskbar(true)
+        .visible(false)
+        .build()
+    {
+        Ok(w) => Some(w),
+        Err(e) => {
+            eprintln!("[ModeHUD] Failed to dynamically build mode_hud: {}", e);
+            None
+        }
+    }
+}
+
+pub fn show_mode_hud(mode: u8) {
+    if let Some(app) = get_app_handle() {
+        let hud = match get_or_create_mode_hud_window(app) {
+            Some(w) => w,
+            None => return,
+        };
+
+        let hud_w = 360.0;
+        let hud_h = 130.0;
+        let _ = hud.set_size(tauri::Size::Logical(tauri::LogicalSize::new(hud_w, hud_h)));
+
+        let monitors = vision::VisionEngine::enumerate_monitors();
+        let target_idx = get_hud_monitor_index();
+
+        let target_mon = if target_idx >= 0 {
+            monitors.iter().find(|m| m.index == target_idx).or_else(|| monitors.iter().find(|m| m.is_primary)).or_else(|| monitors.first())
+        } else {
+            monitors.iter().find(|m| m.is_primary).or_else(|| monitors.first())
+        };
+
+        if let Some(mon) = target_mon {
+            let scale = hud.scale_factor().unwrap_or(1.0);
+            let mut phys_w = (hud_w * scale).round() as i32;
+            let mut phys_h = (hud_h * scale).round() as i32;
+            if let Ok(outer) = hud.outer_size() {
+                if outer.width > 0 && outer.height > 0 {
+                    phys_w = outer.width as i32;
+                    phys_h = outer.height as i32;
+                }
+            }
+            let margin_x = (24.0 * scale).round() as i32;
+            let margin_y = (18.0 * scale).round() as i32;
+
+            // Position inside the monitor's work area (which excludes Windows Taskbar)
+            let target_x = (mon.work_x + mon.work_width - phys_w - margin_x).max(mon.work_x);
+            let target_y = (mon.work_y + mon.work_height - phys_h - margin_y).max(mon.work_y);
+
+            let _ = hud.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                x: target_x,
+                y: target_y,
+            }));
+            println!("[ModeHUD] Placed mode switch HUD on monitor '{}' (index: {}) at ({}, {}) for mode {} (phys: {}x{}, scale: {:.2})", mon.name, mon.index, target_x, target_y, mode, phys_w, phys_h, scale);
+        }
+
+        let _ = hud.unminimize();
+        let _ = hud.show();
+        let _ = hud.set_always_on_top(true);
+        let s = crate::settings::get_cached_settings();
+        let _ = hud.emit("operation_mode_hud", serde_json::json!({
+            "mode": mode,
+            "hotkey": s.hotkey_mode
+        }));
+    }
+}
+
+pub fn hide_mode_hud() {
+    if let Some(app) = get_app_handle() {
+        if let Some(hud) = app.get_webview_window("mode_hud") {
+            let _ = hud.hide();
+        }
+    }
+}
+
 pub struct AppState {
     pub lexical: Arc<Mutex<LexicalEngine>>,
     pub obs: Arc<OBSClient>,
@@ -1138,6 +1308,48 @@ fn test_lookahead_preview_frame(state: State<'_, AppState>) -> Result<(), String
     Ok(())
 }
 
+#[tauri::command]
+fn toggle_audit_window() -> Result<bool, String> {
+    Ok(toggle_audit_window_func())
+}
+
+#[tauri::command]
+fn show_audit_window() -> Result<(), String> {
+    show_audit_window_func();
+    Ok(())
+}
+
+#[tauri::command]
+fn hide_audit_window() -> Result<(), String> {
+    hide_audit_window_func();
+    Ok(())
+}
+
+#[tauri::command]
+fn is_audit_window_open() -> Result<bool, String> {
+    Ok(is_audit_window_visible())
+}
+
+#[tauri::command]
+fn show_mode_hud_cmd(mode: u8) -> Result<(), String> {
+    show_mode_hud(mode);
+    Ok(())
+}
+
+#[tauri::command]
+fn hide_mode_hud_cmd() -> Result<(), String> {
+    hide_mode_hud();
+    Ok(())
+}
+
+#[tauri::command]
+async fn cycle_operation_mode(state: State<'_, AppState>) -> Result<u8, String> {
+    let cur = crate::ws_bridge::get_operation_mode();
+    let next = (cur + 1) % 4;
+    crate::ws_bridge::safe_set_operation_mode(next, &state.obs, &state.ws.broadcast_tx(), &state.ws.lookahead, &state.vision).await;
+    Ok(next)
+}
+
 #[cfg(target_os = "windows")]
 mod hotkeys {
     use std::sync::Arc;
@@ -1327,9 +1539,11 @@ mod hotkeys {
             if init_s.hotkey_scope != "local" {
                 let (mod_p, vk_p) = parse_hotkey_combo(&init_s.hotkey_panic);
                 let (mod_t, vk_t) = parse_hotkey_combo(&init_s.hotkey_threat);
+                let (mod_m, vk_m) = parse_hotkey_combo(&init_s.hotkey_mode);
                 let reg_f9 = register_hotkey_safe(1, mod_p, vk_p);
                 let reg_f8 = register_hotkey_safe(2, mod_t, vk_t);
-                println!("[Hotkeys] Windows global hotkeys active: {} (mod: {:#x}, vk: {:#x})={}, {} (mod: {:#x}, vk: {:#x})={}", init_s.hotkey_panic, mod_p, vk_p, reg_f9 != 0, init_s.hotkey_threat, mod_t, vk_t, reg_f8 != 0);
+                let reg_m = register_hotkey_safe(3, mod_m, vk_m);
+                println!("[Hotkeys] Windows global hotkeys active: {} (mod: {:#x}, vk: {:#x})={}, {} (mod: {:#x}, vk: {:#x})={}, {} (mod: {:#x}, vk: {:#x})={}", init_s.hotkey_panic, mod_p, vk_p, reg_f9 != 0, init_s.hotkey_threat, mod_t, vk_t, reg_f8 != 0, init_s.hotkey_mode, mod_m, vk_m, reg_m != 0);
             } else {
                 println!("[Hotkeys] Hotkey scope is local on launch: global Windows hotkeys not registered");
             }
@@ -1339,13 +1553,16 @@ mod hotkeys {
                 if msg.message == WM_RELOAD_HOTKEYS {
                     UnregisterHotKey(0, 1);
                     UnregisterHotKey(0, 2);
+                    UnregisterHotKey(0, 3);
                     let s = crate::settings::get_cached_settings();
                     if s.hotkey_scope != "local" {
                         let (mod_p, vk_p) = parse_hotkey_combo(&s.hotkey_panic);
                         let (mod_t, vk_t) = parse_hotkey_combo(&s.hotkey_threat);
+                        let (mod_m, vk_m) = parse_hotkey_combo(&s.hotkey_mode);
                         let reg_p = register_hotkey_safe(1, mod_p, vk_p);
                         let reg_t = register_hotkey_safe(2, mod_t, vk_t);
-                        println!("[Hotkeys] Re-registered Windows global hotkeys: {} (mod: {:#x})={}, {} (mod: {:#x})={}", s.hotkey_panic, mod_p, reg_p != 0, s.hotkey_threat, mod_t, reg_t != 0);
+                        let reg_m = register_hotkey_safe(3, mod_m, vk_m);
+                        println!("[Hotkeys] Re-registered Windows global hotkeys: {} (mod: {:#x})={}, {} (mod: {:#x})={}, {} (mod: {:#x})={}", s.hotkey_panic, mod_p, reg_p != 0, s.hotkey_threat, mod_t, reg_t != 0, s.hotkey_mode, mod_m, reg_m != 0);
                     } else {
                         println!("[Hotkeys] Hotkey scope set to local: Windows global hotkeys unregistered");
                     }
@@ -1489,6 +1706,18 @@ mod hotkeys {
                             vision.cascade.set_boost_mode(next);
                             println!("[Hotkeys] Global F8 triggered: FPS Boost={} (Cascade direct dual-scan synchronized)", next);
                             ws.broadcast_fps_mode(next);
+                        }
+                        3 => {
+                            let cur = crate::ws_bridge::get_operation_mode();
+                            let next = (cur + 1) % 4;
+                            println!("[Hotkeys] Global mode cycle triggered: {} -> {}", cur, next);
+                            let obs_c = obs.clone();
+                            let tx_c = ws.broadcast_tx().clone();
+                            let lookahead_c = ws.lookahead.clone();
+                            let vis_c = vision.clone();
+                            tauri::async_runtime::spawn(async move {
+                                crate::ws_bridge::safe_set_operation_mode(next, &obs_c, &tx_c, &lookahead_c, &vis_c).await;
+                            });
                         }
                         _ => {}
                     }
@@ -1926,7 +2155,14 @@ pub fn run() {
             delete_model_profile,
             open_profiles_folder,
             get_model_tuning,
-            set_model_tuning
+            set_model_tuning,
+            toggle_audit_window,
+            show_audit_window,
+            hide_audit_window,
+            is_audit_window_open,
+            show_mode_hud_cmd,
+            hide_mode_hud_cmd,
+            cycle_operation_mode
         ])
         .run(tauri::generate_context!())
         .map_err(|e| {

@@ -50,6 +50,35 @@
         "transparent": false,
         "visible": false,
         "skipTaskbar": false
+      },
+      {
+        "label": "audit_window",
+        "title": "blewred",
+        "url": "audit_window.html",
+        "width": 960,
+        "height": 620,
+        "minWidth": 680,
+        "minHeight": 400,
+        "center": true,
+        "resizable": true,
+        "alwaysOnTop": false,
+        "decorations": false,
+        "transparent": false,
+        "visible": false,
+        "skipTaskbar": false
+      },
+      {
+        "label": "mode_hud",
+        "title": "blewred",
+        "url": "mode_hud.html",
+        "width": 360,
+        "height": 130,
+        "resizable": false,
+        "alwaysOnTop": true,
+        "decorations": false,
+        "transparent": true,
+        "visible": false,
+        "skipTaskbar": true
       }
     ],
     "security": {

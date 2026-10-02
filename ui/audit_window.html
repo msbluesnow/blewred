@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>blewred</title>
+  <link rel="icon" type="image/jpeg" href="blewred_dualver.jpg">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    @font-face {
+      font-family: "Adwaita Sans";
+      src: url("fonts/AdwaitaSans-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Mono";
+      src: url("fonts/AdwaitaMono-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Mono";
+      src: url("fonts/AdwaitaMono-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0d0f13;
+      font-family: "Adwaita Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #d1d5db;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    /* Bootstrap 3 Dark Edition: Main Floating Window Container */
+    .audit-window-panel {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background-color: #15181f;
+      border: 1px solid #282f3a;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Draggable Header Titlebar */
+    .panel-heading {
+      padding: 7px 10px;
+      border-bottom: 1px solid #282f3a;
+      background: linear-gradient(to bottom, #232832 0%, #171a21 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: grab;
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+      height: 38px;
+    }
+
+    .panel-heading:active {
+      cursor: grabbing;
+    }
+
+    .panel-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .pulsing-radar-dot {
+      width: 8px;
+      height: 8px;
+      background: #ff4141;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #ff4141;
+      animation: radarPulseRed 1.2s infinite alternate;
+    }
+
+    @keyframes radarPulseRed {
+      from { opacity: 0.7; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1.25); box-shadow: 0 0 10px #ff4141; }
+    }
+
+    .panel-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.4px;
+      text-transform: lowercase;
+      margin: 0;
+    }
+
+    .badge-sub {
+      font-size: 9.5px;
+      font-weight: 700;
+      background-color: #121418;
+      border: 1px solid #2b313c;
+      color: #94a3b8;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: "Adwaita Mono", monospace;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn-tool {
+      background: #1c2027;
+      border: 1px solid #2b313c;
+      color: #94a3b8;
+      border-radius: 3px;
+      width: 24px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 11px;
+      line-height: 1;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .btn-tool:hover {
+      background: #2b323e;
+      color: #ffffff;
+      border-color: #3b4252;
+    }
+
+    .btn-tool.active-pin {
+      background: #0077c2;
+      border-color: #19aeff;
+      color: #ffffff;
+      box-shadow: 0 0 6px rgba(25, 174, 255, 0.4);
+    }
+
+    .btn-tool.btn-close:hover {
+      background: #dc2626;
+      border-color: #ef4444;
+      color: #ffffff;
+    }
+
+    /* Window Body Layout */
+    .audit-body-container {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      overflow: hidden;
+      background-color: #12151c;
+      gap: 10px;
+    }
+
+    .audit-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .audit-table-container {
+      flex: 1;
+      min-height: 0;
+      border: 1px solid var(--bs-border-color, #282f3a);
+      border-radius: 4px;
+      overflow-y: auto;
+      overflow-x: auto;
+      background-color: #151821;
+    }
+
+    .audit-table-container .table {
+      margin-bottom: 0;
+    }
+
+    .empty-state-box {
+      padding: 36px 16px;
+      text-align: center;
+      color: #64748b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .empty-state-box svg {
+      stroke: #475569;
+    }
+  </style>
+</head>
+<body>
+  <div class="audit-window-panel">
+    <!-- Draggable Header Titlebar -->
+    <div class="panel-heading" data-tauri-drag-region>
+      <div class="panel-title-wrap" data-tauri-drag-region>
+        <span class="pulsing-radar-dot"></span>
+        <span class="panel-title" data-tauri-drag-region>blewred</span>
+        <span class="badge-sub" data-i18n="audit_window_badge">ЖУРНАЛ ИНЦИДЕНТОВ (AUDIT LOG)</span>
+      </div>
+
+      <div class="header-actions">
+        <button type="button" class="btn-tool" id="btn-pin" aria-label="Поверх всех окон">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="17" x2="12" y2="22" />
+            <path d="M5 17h14v-2l-2-2V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v8l-2 2v2z" />
+          </svg>
+        </button>
+        <button type="button" class="btn-tool" id="btn-minimize" aria-label="Свернуть">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="12" x2="20" y2="12" />
+          </svg>
+        </button>
+        <button type="button" class="btn-tool btn-close" id="btn-close" aria-label="Закрыть">✕</button>
+      </div>
+    </div>
+
+    <!-- Window Body -->
+    <div class="audit-body-container">
+      <!-- Top Action Bar -->
+      <div class="audit-top-bar">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="label label-danger">LIVE AUDIT</span>
+          <span style="font-size: 11.5px; color: #94a3b8;" data-i18n="audit_header_title">Журнал инцидентов цензуры</span>
+        </div>
+        <button type="button" class="btn btn-default btn-xs" id="btn-clear-incidents" style="display: inline-flex; align-items: center; gap: 4px;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+          <span data-i18n="audit_btn_clear_text">Очистить</span>
+        </button>
+      </div>
+
+      <!-- Audit Statistics Ribbon -->
+      <div class="audit-stats-ribbon">
+        <div class="audit-stat-card">
+          <span class="audit-stat-num" id="stat-total-incidents">0</span>
+          <span class="audit-stat-label" data-i18n="audit_stat_total">Всего</span>
+        </div>
+        <div class="audit-stat-card">
+          <span class="audit-stat-num stat-danger" id="stat-nsfw-incidents">0</span>
+          <span class="audit-stat-label" data-i18n="audit_stat_nsfw">NSFW</span>
+        </div>
+        <div class="audit-stat-card">
+          <span class="audit-stat-num stat-warning" id="stat-ocr-incidents">0</span>
+          <span class="audit-stat-label" data-i18n="audit_stat_ocr">Стоп-слова</span>
+        </div>
+        <div class="audit-stat-card">
+          <span class="audit-stat-num stat-cue" id="stat-cues-incidents">0</span>
+          <span class="audit-stat-label" data-i18n="audit_stat_cues">Тайминги</span>
+        </div>
+      </div>
+
+      <!-- Filter Tabs (Bootstrap Nav-Pills Style) -->
+      <div class="audit-filter-bar">
+        <ul class="nav nav-pills audit-filter-tabs">
+          <li class="active"><button type="button" class="audit-tab active" data-filter="all" id="tab-filter-all"><span data-i18n="audit_tab_all">Все</span> (<span id="count-all">0</span>)</button></li>
+          <li><button type="button" class="audit-tab" data-filter="nsfw" id="tab-filter-nsfw"><span data-i18n="audit_tab_nsfw">Нагота</span> (<span id="count-nsfw">0</span>)</button></li>
+          <li><button type="button" class="audit-tab" data-filter="ocr" id="tab-filter-ocr"><span data-i18n="audit_tab_ocr">Стоп-слова</span> (<span id="count-ocr">0</span>)</button></li>
+          <li><button type="button" class="audit-tab" data-filter="cue" id="tab-filter-cue"><span data-i18n="audit_tab_cue">Тайминги</span> (<span id="count-cue">0</span>)</button></li>
+          <li><button type="button" class="audit-tab" data-filter="active" id="tab-filter-active"><span data-i18n="audit_tab_active">Активные</span> (<span id="count-active">0</span>)</button></li>
+        </ul>
+      </div>
+
+      <!-- Incidents Table -->
+      <div class="audit-table-container">
+        <table class="table table-striped table-bordered table-hover table-condensed incidents-table">
+          <thead>
+            <tr>
+              <th style="width: 75px;" data-i18n="audit_th_time">Время</th>
+              <th style="width: 100px;" data-i18n="audit_th_monitor">Монитор</th>
+              <th style="width: 100px;" data-i18n="audit_th_type">Тип</th>
+              <th data-i18n="audit_th_violation">Нарушение</th>
+              <th style="width: 140px;" data-i18n="audit_th_action">Действие в OBS</th>
+              <th style="width: 110px;" data-i18n="audit_th_status">Статус</th>
+            </tr>
+          </thead>
+          <tbody id="incidents-tbody">
+            <tr class="empty-row" id="incidents-empty-row">
+              <td colspan="6" class="text-center text-muted" style="padding: 32px 16px;">
+                <div class="empty-state-box">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  <span data-i18n="audit_empty_row">Инцидентов цензуры не зафиксировано. Поток безопасен.</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script>
+    let isPinned = false;
+    let incidentCounter = 0;
+    let totalIncidents = 0;
+    let nsfwIncidents = 0;
+    let ocrIncidents = 0;
+    let cuesIncidents = 0;
+    let activeIncidents = 0;
+    let activeAuditFilter = "all";
+
+    const btnPin = document.getElementById("btn-pin");
+    const btnMinimize = document.getElementById("btn-minimize");
+    const btnClose = document.getElementById("btn-close");
+    const btnClearIncidents = document.getElementById("btn-clear-incidents");
+
+    const incidentsTbody = document.getElementById("incidents-tbody");
+    const incidentsEmptyRow = document.getElementById("incidents-empty-row");
+
+    const statTotalIncidents = document.getElementById("stat-total-incidents");
+    const statNsfwIncidents = document.getElementById("stat-nsfw-incidents");
+    const statOcrIncidents = document.getElementById("stat-ocr-incidents");
+    const statCuesIncidents = document.getElementById("stat-cues-incidents");
+    const countAll = document.getElementById("count-all");
+    const countNsfw = document.getElementById("count-nsfw");
+    const countOcr = document.getElementById("count-ocr");
+    const countCue = document.getElementById("count-cue");
+    const countActive = document.getElementById("count-active");
+
+    function isEn() {
+      try {
+        if (window.I18N && typeof window.I18N.getLanguage === "function") {
+          return window.I18N.getLanguage() === "en";
+        }
+        const saved = localStorage.getItem("blewred_lang");
+        return saved === "en";
+      } catch (e) {}
+      return false;
+    }
+
+    // Window controls
+    btnPin.addEventListener("click", async () => {
+      isPinned = !isPinned;
+      try {
+        if (window.__TAURI__ && window.__TAURI__.window) {
+          await window.__TAURI__.window.getCurrentWindow().setAlwaysOnTop(isPinned);
+        }
+      } catch (err) {}
+      if (isPinned) {
+        btnPin.classList.add("active-pin");
+      } else {
+        btnPin.classList.remove("active-pin");
+      }
+    });
+
+    btnMinimize.addEventListener("click", () => {
+      try {
+        if (window.__TAURI__ && window.__TAURI__.window) {
+          window.__TAURI__.window.getCurrentWindow().minimize();
+        }
+      } catch (err) {}
+    });
+
+    function closeAuditWindow() {
+      try {
+        if (window.__TAURI__ && window.__TAURI__.core) {
+          window.__TAURI__.core.invoke("hide_audit_window").catch(() => {});
+        }
+      } catch (e) {}
+      try {
+        if (window.__TAURI__ && window.__TAURI__.window) {
+          window.__TAURI__.window.getCurrentWindow().hide();
+        }
+      } catch (e) {}
+    }
+
+    btnClose.addEventListener("click", closeAuditWindow);
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeAuditWindow();
+      }
+    });
+
+    function updateAuditStats() {
+      if (statTotalIncidents) statTotalIncidents.textContent = totalIncidents;
+      if (statNsfwIncidents) statNsfwIncidents.textContent = nsfwIncidents;
+      if (statOcrIncidents) statOcrIncidents.textContent = ocrIncidents;
+      if (statCuesIncidents) statCuesIncidents.textContent = cuesIncidents;
+      if (countAll) countAll.textContent = totalIncidents;
+      if (countNsfw) countNsfw.textContent = nsfwIncidents;
+      if (countOcr) countOcr.textContent = ocrIncidents;
+      if (countCue) countCue.textContent = cuesIncidents;
+      if (countActive) countActive.textContent = activeIncidents;
+    }
+
+    function applyAuditFilter(filter) {
+      activeAuditFilter = filter;
+      document.querySelectorAll(".audit-tab").forEach(tab => {
+        const isSelected = tab.dataset.filter === filter;
+        tab.classList.toggle("active", isSelected);
+        if (tab.parentElement && tab.parentElement.tagName === "LI") {
+          tab.parentElement.classList.toggle("active", isSelected);
+        }
+      });
+
+      if (!incidentsTbody) return;
+      const rows = incidentsTbody.querySelectorAll("tr:not(.empty-row)");
+      let visibleCount = 0;
+      rows.forEach(row => {
+        const isNsfw = row.dataset.type === "nsfw";
+        const isOcr = row.dataset.type === "ocr";
+        const isCue = row.dataset.type === "cue";
+        const isActive = row.dataset.active === "true";
+
+        let show = true;
+        if (filter === "nsfw") show = isNsfw;
+        else if (filter === "ocr") show = isOcr;
+        else if (filter === "cue") show = isCue;
+        else if (filter === "active") show = isActive;
+
+        row.style.display = show ? "" : "none";
+        if (show) visibleCount++;
+      });
+
+      if (incidentsEmptyRow) {
+        incidentsEmptyRow.style.display = (rows.length === 0 || visibleCount === 0) ? "" : "none";
+      }
+    }
+
+    document.querySelectorAll(".audit-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        applyAuditFilter(tab.dataset.filter || "all");
+      });
+    });
+
+    function recordIncident(inc) {
+      if (!incidentsTbody) return;
+      if (incidentsEmptyRow) {
+        incidentsEmptyRow.style.display = "none";
+      }
+
+      incidentCounter++;
+      totalIncidents++;
+
+      const vType = (inc.violation_type || "").toUpperCase();
+      const isCue = vType.includes("CUE") || vType.includes("LOOKAHEAD") || vType.includes("SCHEDULED");
+      const isNsfw = !isCue && vType.includes("NSFW");
+      const isOcr = !isCue && !isNsfw;
+
+      if (isCue) {
+        cuesIncidents++;
+      } else if (isNsfw) {
+        nsfwIncidents++;
+      } else {
+        ocrIncidents++;
+      }
+
+      const incId = inc.id || `inc-${Date.now()}-${incidentCounter}`;
+      const tr = document.createElement("tr");
+      tr.id = `inc-row-${incId}`;
+      tr.dataset.incidentId = incId;
+      tr.dataset.type = isCue ? "cue" : (isNsfw ? "nsfw" : "ocr");
+      tr.dataset.active = "true";
+      if (inc.cue_id) {
+        tr.dataset.cueId = inc.cue_id;
+      }
+
+      const en = isEn();
+      const targetClass = isCue ? "target-cue" : (isNsfw ? "target-nsfw" : "target-ocr");
+      let catBadge = "";
+      if (isCue) {
+        const badgeLabel = en
+          ? (vType.includes("LOOKAHEAD") ? "PREEMPTIVE (PLAYER)" : "TIMING (PLAYER)")
+          : (vType.includes("LOOKAHEAD") ? "ПРЕВЕНТИВНЫЙ (ПЛЕЕР)" : "ТАЙМИНГ (ПЛЕЕР)");
+        catBadge = `<span class="pill-tag" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">${badgeLabel}</span>`;
+      } else if (isNsfw) {
+        catBadge = `<span class="pill-tag" style="color: #f87171; border-color: rgba(239, 68, 68, 0.4);">${en ? "NUDITY (NSFW)" : "НАГОТА (NSFW)"}</span>`;
+      } else {
+        catBadge = `<span class="pill-tag" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.4);">${en ? "STOPWORD (OCR)" : "СТОП-СЛОВО (OCR)"}</span>`;
+      }
+
+      const defaultMonitor = en ? "Main Monitor" : "Основной монитор";
+      const defaultTarget = en ? "VIOLATION" : "НАРУШЕНИЕ";
+      const defaultAction = en ? "OBS Shield overlay active, audio muted" : "Защитный экран в OBS включен, звук заглушен";
+      const activeStatus = en ? "ACTIVE" : "АКТИВЕН";
+
+      tr.innerHTML = `
+        <td><span class="incident-time">${inc.timestamp || new Date().toTimeString().split(" ")[0]}</span></td>
+        <td><span class="incident-monitor">${inc.monitor || defaultMonitor}</span></td>
+        <td>${catBadge}</td>
+        <td><span class="incident-target ${targetClass}">${inc.target || defaultTarget}</span></td>
+        <td>${inc.circumstances || inc.action || defaultAction}</td>
+        <td><span class="incident-status-tag active" id="inc-badge-${incId}">${activeStatus}</span></td>
+      `;
+
+      incidentsTbody.insertBefore(tr, incidentsTbody.firstChild);
+      activeIncidents = incidentsTbody.querySelectorAll("tr[data-active='true']").length;
+      updateAuditStats();
+      applyAuditFilter(activeAuditFilter);
+
+      while (incidentsTbody.children.length > 51) {
+        incidentsTbody.removeChild(incidentsTbody.lastChild);
+      }
+    }
+
+    function resolveCueIncident(cueId) {
+      if (!incidentsTbody) return;
+      const rows = incidentsTbody.querySelectorAll("tr[data-type='cue'][data-active='true']");
+      rows.forEach(row => {
+        if (!cueId || row.dataset.cueId === cueId || !row.dataset.cueId) {
+          row.dataset.active = "false";
+          const tag = row.querySelector(".incident-status-tag");
+          if (tag) {
+            tag.className = "incident-status-tag resolved";
+            tag.textContent = isEn() ? "RESOLVED: TIMING EXPIRED" : "СНЯТ: ТАЙМИНГ ИСТЕК";
+          }
+        }
+      });
+      activeIncidents = incidentsTbody.querySelectorAll("tr[data-active='true']").length;
+      updateAuditStats();
+      applyAuditFilter(activeAuditFilter);
+    }
+
+    function resolveSpecificIncident(incidentId) {
+      if (!incidentsTbody) return;
+      const row = incidentsTbody.querySelector(`tr[data-incident-id='${incidentId}']`) || document.getElementById(`inc-row-${incidentId}`);
+      if (row && row.dataset.active === "true") {
+        row.dataset.active = "false";
+        const tag = row.querySelector(".incident-status-tag");
+        if (tag) {
+          tag.className = "incident-status-tag resolved";
+          tag.textContent = isEn() ? "RESOLVED: STREAM SAFE" : "СНЯТ: ПОТОК БЕЗОПАСЕН";
+        }
+        activeIncidents = incidentsTbody.querySelectorAll("tr[data-active='true']").length;
+        updateAuditStats();
+        applyAuditFilter(activeAuditFilter);
+      }
+    }
+
+    function clearAuditLog() {
+      if (incidentsTbody) {
+        incidentsTbody.innerHTML = `
+          <tr class="empty-row" id="incidents-empty-row">
+            <td colspan="6" class="text-center text-muted" style="padding: 32px 16px;">
+              <div class="empty-state-box">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span data-i18n="audit_empty_row">${isEn() ? "No incidents yet. System is awaiting suspicious content." : "Инцидентов цензуры не зафиксировано. Поток безопасен."}</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+      totalIncidents = 0;
+      nsfwIncidents = 0;
+      ocrIncidents = 0;
+      cuesIncidents = 0;
+      activeIncidents = 0;
+      updateAuditStats();
+    }
+
+    btnClearIncidents.addEventListener("click", () => {
+      clearAuditLog();
+      // Broadcast clear to main window and ws
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "clear_incidents" }));
+      }
+      if (window.__TAURI__ && window.__TAURI__.event) {
+        window.__TAURI__.event.emit("blewred://audit-cleared", {}).catch(() => {});
+      }
+    });
+
+    let ws = null;
+    function connectWs() {
+      try {
+        ws = new WebSocket("ws://127.0.0.1:9002");
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "new_incident" && data.incident) {
+              recordIncident(data.incident);
+            } else if (data.type === "incident_resolved" && data.incident_id) {
+              resolveSpecificIncident(data.incident_id);
+            } else if (data.type === "cue_completed" && data.cue_id) {
+              resolveCueIncident(data.cue_id);
+            } else if (data.type === "audit_cleared" || data.type === "clear_incidents") {
+              clearAuditLog();
+            }
+          } catch (e) {}
+        };
+        ws.onclose = () => {
+          setTimeout(connectWs, 2000);
+        };
+        ws.onerror = () => {
+          ws.close();
+        };
+      } catch (e) {}
+    }
+
+    connectWs();
+
+    // Listen to Tauri events
+    if (window.__TAURI__ && window.__TAURI__.event) {
+      window.__TAURI__.event.listen("blewred://audit-cleared", () => {
+        clearAuditLog();
+      });
+      window.__TAURI__.event.listen("blewred://new-incident", (evt) => {
+        if (evt.payload) recordIncident(evt.payload);
+      });
+      window.__TAURI__.event.listen("blewred://incident-resolved", (evt) => {
+        if (evt.payload && evt.payload.incident_id) resolveSpecificIncident(evt.payload.incident_id);
+      });
+    }
+
+    if (window.I18N && typeof window.I18N.applyToDOM === "function") {
+      window.I18N.applyToDOM();
+    }
+  </script>
+</body>
+</html>

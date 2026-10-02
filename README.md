@@ -215,16 +215,17 @@ blewred **does not capture microphone audio or perform acoustic speech recogniti
 
 blewred features 4 operating modes switchable dynamically in real time:
 
-* **Mode 0: Hybrid** — *Recommended default*. Comprehensive protection: browser video player lookahead, scheduled cues, continuous GPU screen analysis + Windows OCR, and automated OBS audio muting.
-* **Mode 1: Player Only** — *Minimum resource mode*. Screen capture and OCR are suspended (0 FPS), 100% GPU free, CPU < 1%. Preemptive warnings and muting are managed through the browser extension.
-* **Mode 2: Screen Only** — *Autonomous display protection*. Continuous frame-by-frame Direct3D 11 analysis + WinRT OCR without browser extension dependencies.
-* **Mode 3: Standby** — Full monitoring pause (0 FPS). All censor masks, audio mutes, and OBS shields are cleared immediately.
+* **Mode 0: Hybrid** — *purple accent*. *Recommended default*. Comprehensive protection: browser video player lookahead, scheduled cues, continuous GPU screen analysis + Windows OCR, and automated OBS audio muting.
+* **Mode 1: Player Only** — *green accent*. *Minimum resource mode*. Screen capture and OCR are suspended (0 FPS), 100% GPU free, CPU < 1%. Preemptive warnings and muting are managed through the browser extension.
+* **Mode 2: Screen Only** — *blue accent*. *Autonomous display protection*. Continuous frame-by-frame Direct3D 11 analysis + WinRT OCR without browser extension dependencies.
+* **Mode 3: Standby** — *red accent*. Full monitoring pause (0 FPS). All censor masks, audio mutes, and OBS shields are cleared immediately.
 
 #### Race-Condition Protection & Atomic Generations
 1. **Atomic Generation IDs (`MODE_GENERATION`)**: every mode transition increments a generation counter. Background tasks verify the generation ID before applying any censor action.
 2. **Guaranteed Stale-State Cleansing**: transitioning to Mode 1 clears screen masks; Mode 2 clears player tickets; Mode 3 unblocks all channels and resets shader overlays.
 3. **One-Click Mode Standby Toggle**: clicking the active mode button again (or pressing "Off (3)") instantly switches the system into safe Standby mode.
 4. **Status Ribbon Indicators**: the top navigation bar displays live connection status (`EXTENSION: ON / OFF`, `OBS STUDIO: ON / OFF`), updated on a 4-second heartbeat.
+5. **Mode Switch HUD Popup**: switching modes via keyboard shortcut or UI triggers a compact semi-transparent 5.5-second HUD overlay with a smooth timer bar on the designated monitor, positioned in the lower-right corner right above the Windows taskbar (automatically accounting for monitor DPI and `rcWork` work area). The window's color theme strictly matches the active mode: Purple (0), Green (1), Blue (2), Red (3).
 
 ---
 
@@ -259,6 +260,9 @@ blewred features 4 operating modes switchable dynamically in real time:
    - Each detected lookahead incident creates a ticket with status `pending`, ETA countdown, and a frame preview thumbnail.
    - Confirming censorship (default **F9**, customizable) transitions the ticket to `confirmed_censor` — OBS mutes audio and activates Censor Shield.
    - Dismissing as a false alarm (default **F8**, customizable) transitions it to `allowed` — the ticket closes with no effect on the broadcast.
+5. **Detached Audit Log Window**:
+   - Clicking "Open in New Window" pops out the incident log into a standalone, resizable modal window (960×620).
+   - Supports full real-time filtering (`All`, `Nudity`, `Stopwords`, `Cues`, `Active`), live sync via WebSocket and Tauri events (`blewred://new-incident`, `blewred://incident-resolved`, `blewred://audit-cleared`), and independent log clearing.
 
 ---
 
@@ -346,6 +350,7 @@ blewred persists operator preferences across application restarts in `config/` (
 | **Threat Mode Toggle** | **F8** | Fully rebindable (any combo) | Toggles screen analysis pacing between Idle mode (5 FPS) and Danger mode (60 FPS). |
 | **Lookahead Quick Censor** | **F9** | Synced with Panic Mute | Confirms censorship for the incoming preview violation in the Lookahead window. |
 | **Lookahead Dismiss (Safe)** | **F8** | Synced with Threat Mode | Dismisses incoming preview violation as a false alarm in the Lookahead window. |
+| **Cycle Operating Mode** | **Ctrl + Shift + F1** | Fully rebindable (any combo) | Cycles stream protection modes (0: Hybrid ➔ 1: Player Only ➔ 2: Screen Only ➔ 3: Standby) with Mode Switch HUD. |
 
 ---
 

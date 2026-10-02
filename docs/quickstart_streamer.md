@@ -119,6 +119,7 @@ The **Stream Monitor** dropdown lists all connected physical displays (e.g., "Mo
 Verify emergency shortcuts:
 * **F9 (Panic Mute / Emergency Censor)**: Instantly mutes microphone and desktop audio in OBS for 3 seconds and deploys the Censor Shield overlay.
 * **F8 (Threat Boost Mode)**: Escalates screen analysis from 5 FPS to 60 FPS (useful when navigating risky sites or viewing chat media).
+* **Ctrl + Shift + F1 (Cycle Operation Mode)**: Cycles stream protection mode (0: Hybrid ➔ 1: Player Only ➔ 2: Screen Only ➔ 3: Standby / Off) with a 5.5-second HUD popup on the designated monitor.
 
 > 💡 **Hotkey Customization**: In `blewred`, all hotkeys can be fully customized and remapped via the **"Hotkeys"** button in the top toolbar. Multi-key combinations with modifiers (`Ctrl`, `Alt`, `Shift`, `Win`), interactive keyboard recording, and scope selection (global across Windows or local to the app) are fully supported.
 

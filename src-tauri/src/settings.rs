@@ -43,6 +43,8 @@ pub struct UserSettings {
     pub hotkey_panic: String,
     #[serde(default = "default_hotkey_threat")]
     pub hotkey_threat: String,
+    #[serde(default = "default_hotkey_mode")]
+    pub hotkey_mode: String,
     #[serde(default = "default_language")]
     pub language: String,
     #[serde(default = "default_active_model_profile")]
@@ -93,6 +95,10 @@ fn default_hotkey_threat() -> String {
     "F8".to_string()
 }
 
+fn default_hotkey_mode() -> String {
+    "Ctrl + Shift + F1".to_string()
+}
+
 fn default_language() -> String {
     "ru".to_string()
 }
@@ -118,6 +124,7 @@ impl Default for UserSettings {
             hotkey_scope: default_hotkey_scope(),
             hotkey_panic: default_hotkey_panic(),
             hotkey_threat: default_hotkey_threat(),
+            hotkey_mode: default_hotkey_mode(),
             language: default_language(),
             active_model_profile: default_active_model_profile(),
             model_tuning: crate::cascade::ModelProfile::default(),
@@ -476,6 +483,7 @@ mod tests {
         assert_eq!(defaults.hotkey_scope, "global");
         assert_eq!(defaults.hotkey_panic, "F9");
         assert_eq!(defaults.hotkey_threat, "F8");
+        assert_eq!(defaults.hotkey_mode, "Ctrl + Shift + F1");
     }
 
     #[test]
@@ -493,6 +501,7 @@ mod tests {
         settings.hotkey_scope = "local".to_string();
         settings.hotkey_panic = "F12".to_string();
         settings.hotkey_threat = "F11".to_string();
+        settings.hotkey_mode = "Ctrl + Shift + F2".to_string();
 
         let json = serde_json::to_string(&settings).expect("serialization failed");
         let parsed: UserSettings = serde_json::from_str(&json).expect("deserialization failed");
@@ -526,6 +535,7 @@ mod tests {
         assert_eq!(parsed.hotkey_scope, "global");
         assert_eq!(parsed.hotkey_panic, "F9");
         assert_eq!(parsed.hotkey_threat, "F8");
+        assert_eq!(parsed.hotkey_mode, "Ctrl + Shift + F1");
         assert_eq!(parsed.language, "ru");
     }
 

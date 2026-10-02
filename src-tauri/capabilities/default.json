@@ -4,7 +4,10 @@
   "description": "enables the default permissions",
   "windows": [
     "main",
-    "lookahead_hud"
+    "lookahead_hud",
+    "lookahead_preview",
+    "audit_window",
+    "mode_hud"
   ],
   "permissions": [
     "core:default",

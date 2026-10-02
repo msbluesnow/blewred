@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/jpeg" href="blewred_dualver.jpg">
+  <style>
+    @font-face {
+      font-family: "Adwaita Sans";
+      src: url("fonts/AdwaitaSans-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Mono";
+      src: url("fonts/AdwaitaMono-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Adwaita Mono";
+      src: url("fonts/AdwaitaMono-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: transparent;
+      font-family: "Adwaita Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #d1d5db;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+
+    /* Bootstrap 3 Dark Edition: Mode Switch Notification HUD */
+    .mode-hud-panel {
+      width: 100%;
+      height: 100%;
+      background: #14171f;
+      border: 1px solid #2b3342;
+      border-radius: 6px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.88), 0 0 16px rgba(168, 85, 247, 0.22);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      margin: 0;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .panel-heading {
+      padding: 5px 9px;
+      border-bottom: 1px solid #262e3d;
+      background: linear-gradient(to bottom, #1e2430 0%, #131720 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: grab;
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+      height: 30px;
+    }
+
+    .panel-heading:active {
+      cursor: grabbing;
+    }
+
+    .panel-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .mode-status-dot {
+      width: 8px;
+      height: 8px;
+      background: #a855f7;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #a855f7;
+      animation: pulseModeDot 1.4s infinite alternate;
+    }
+
+    @keyframes pulseModeDot {
+      from { opacity: 0.7; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1.2); box-shadow: 0 0 9px currentColor; }
+    }
+
+    .panel-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #c084fc;
+      letter-spacing: 0.4px;
+      text-transform: lowercase;
+      margin: 0;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .badge-sub {
+      font-size: 9px;
+      font-weight: 700;
+      background-color: #0e1117;
+      border: 1px solid #28303e;
+      color: #94a3b8;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: "Adwaita Mono", monospace;
+      letter-spacing: 0.4px;
+    }
+
+    .btn-tool-close {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #64748b;
+      border-radius: 3px;
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      -webkit-app-region: no-drag;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .btn-tool-close:hover {
+      background: #dc2626;
+      border-color: #ef4444;
+      color: #ffffff;
+    }
+
+    /* HUD Content Body */
+    .panel-body {
+      flex: 1;
+      padding: 8px 10px 6px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 0;
+      background: radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.02), transparent 70%);
+    }
+
+    .mode-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .mode-info-col {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .mode-title-badge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .mode-badge-num {
+      font-family: "Adwaita Mono", monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 3px;
+      line-height: 1.3;
+      transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+    }
+
+    .mode-name-text {
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color 0.2s;
+    }
+
+    .mode-desc-text {
+      font-size: 10.5px;
+      color: #94a3b8;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mode-hotkey-wrap {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .hotkey-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-family: "Adwaita Mono", monospace;
+      font-size: 9.5px;
+      color: #94a3b8;
+      background: #11141b;
+      border: 1px solid #232936;
+      border-radius: 4px;
+      padding: 2px 5px;
+    }
+
+    .hotkey-badge kbd {
+      background: #1a202c;
+      border: 1px solid #334155;
+      border-radius: 3px;
+      padding: 1px 4px;
+      color: #e2e8f0;
+      font-weight: 700;
+      font-size: 9px;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+    }
+
+    /* Progress & Countdown Footer Bar */
+    .hud-footer-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .hud-progress-wrap {
+      flex: 1;
+      height: 4px;
+      background: #1b212c;
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hud-progress-fill {
+      height: 100%;
+      width: 100%;
+      border-radius: 2px;
+      transition: width 0.1s linear, background 0.2s;
+    }
+
+    .hud-timer-label {
+      font-family: "Adwaita Mono", monospace;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #64748b;
+      flex-shrink: 0;
+      width: 28px;
+      text-align: right;
+    }
+
+    /* ==========================================================================
+       Mode Themes (Synchronized with Settings & User Request)
+       0: Hybrid (Purple)
+       1: Player Only (Green)
+       2: Screen Only (Blue)
+       3: Standby / Off (Red)
+       ========================================================================== */
+
+    /* Mode 0: Hybrid (Purple) */
+    .mode-hud-panel.theme-mode-0 {
+      border-color: #a855f7 !important;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.88), 0 0 16px rgba(168, 85, 247, 0.35);
+    }
+    .mode-hud-panel.theme-mode-0 .panel-title { color: #c084fc; }
+    .mode-hud-panel.theme-mode-0 .mode-status-dot { background: #a855f7; box-shadow: 0 0 8px #a855f7; color: #a855f7; }
+    .mode-hud-panel.theme-mode-0 .mode-badge-num { background: rgba(168, 85, 247, 0.15); border: 1px solid #7c3aed; color: #c084fc; }
+    .mode-hud-panel.theme-mode-0 .mode-name-text { color: #c084fc; }
+    .mode-hud-panel.theme-mode-0 .hud-progress-fill { background: linear-gradient(90deg, #9333ea, #c084fc); }
+
+    /* Mode 1: Player Only (Green) */
+    .mode-hud-panel.theme-mode-1 {
+      border-color: #10b981 !important;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.88), 0 0 16px rgba(16, 185, 129, 0.35);
+    }
+    .mode-hud-panel.theme-mode-1 .panel-title { color: #34d399; }
+    .mode-hud-panel.theme-mode-1 .mode-status-dot { background: #10b981; box-shadow: 0 0 8px #10b981; color: #10b981; }
+    .mode-hud-panel.theme-mode-1 .mode-badge-num { background: rgba(16, 185, 129, 0.15); border: 1px solid #059669; color: #34d399; }
+    .mode-hud-panel.theme-mode-1 .mode-name-text { color: #34d399; }
+    .mode-hud-panel.theme-mode-1 .hud-progress-fill { background: linear-gradient(90deg, #059669, #34d399); }
+
+    /* Mode 2: Screen Only (Blue) */
+    .mode-hud-panel.theme-mode-2 {
+      border-color: #3b82f6 !important;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.88), 0 0 16px rgba(59, 130, 246, 0.35);
+    }
+    .mode-hud-panel.theme-mode-2 .panel-title { color: #60a5fa; }
+    .mode-hud-panel.theme-mode-2 .mode-status-dot { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; color: #3b82f6; }
+    .mode-hud-panel.theme-mode-2 .mode-badge-num { background: rgba(59, 130, 246, 0.15); border: 1px solid #2563eb; color: #60a5fa; }
+    .mode-hud-panel.theme-mode-2 .mode-name-text { color: #60a5fa; }
+    .mode-hud-panel.theme-mode-2 .hud-progress-fill { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+
+    /* Mode 3: Standby / Off (Red) */
+    .mode-hud-panel.theme-mode-3 {
+      border-color: #ef4444 !important;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.88), 0 0 16px rgba(239, 68, 68, 0.35);
+    }
+    .mode-hud-panel.theme-mode-3 .panel-title { color: #f87171; }
+    .mode-hud-panel.theme-mode-3 .mode-status-dot { background: #ef4444; box-shadow: 0 0 8px #ef4444; color: #ef4444; }
+    .mode-hud-panel.theme-mode-3 .mode-badge-num { background: rgba(239, 68, 68, 0.15); border: 1px solid #dc2626; color: #f87171; }
+    .mode-hud-panel.theme-mode-3 .mode-name-text { color: #f87171; }
+    .mode-hud-panel.theme-mode-3 .hud-progress-fill { background: linear-gradient(90deg, #dc2626, #f87171); }
+  </style>
+</head>
+<body>
+  <div class="mode-hud-panel theme-mode-0" id="hud-panel">
+    <div class="panel-heading" data-tauri-drag-region>
+      <div class="panel-title-wrap" data-tauri-drag-region>
+        <span class="mode-status-dot" id="mode-dot"></span>
+        <span class="panel-title" data-tauri-drag-region>blewred</span>
+        <span class="badge-sub" id="mode-badge-title" data-i18n="mode_hud_title">СМЕНА РЕЖИМА</span>
+      </div>
+      <button type="button" class="btn-tool-close" id="btn-close-hud" aria-label="Закрыть">✕</button>
+    </div>
+
+    <div class="panel-body">
+      <div class="mode-main-row">
+        <div class="mode-info-col">
+          <div class="mode-title-badge-wrap">
+            <span class="mode-badge-num" id="lbl-mode-num">0</span>
+            <span class="mode-name-text" id="lbl-mode-name">ГИБРИДНЫЙ РЕЖИМ (HYBRID)</span>
+          </div>
+          <div class="mode-desc-text" id="lbl-mode-desc">Защита экрана и видеоплеера активна</div>
+        </div>
+        <div class="mode-hotkey-wrap">
+          <div class="hotkey-badge" id="lbl-mode-hotkey">
+            <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F1</kbd>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-footer-bar">
+        <div class="hud-progress-wrap">
+          <div class="hud-progress-fill" id="hud-progress-fill"></div>
+        </div>
+        <span class="hud-timer-label" id="hud-timer-label">5.5s</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script>
+    const TOTAL_DURATION_MS = 5500;
+    let currentMode = 0;
+    let currentHotkey = "Ctrl + Shift + F1";
+    let countdownRemaining = TOTAL_DURATION_MS;
+    let countdownTimer = null;
+    let lastTickTime = Date.now();
+
+    const hudPanel = document.getElementById("hud-panel");
+    const modeDot = document.getElementById("mode-dot");
+    const lblModeNum = document.getElementById("lbl-mode-num");
+    const lblModeName = document.getElementById("lbl-mode-name");
+    const lblModeDesc = document.getElementById("lbl-mode-desc");
+    const lblModeHotkey = document.getElementById("lbl-mode-hotkey");
+    const hudProgressFill = document.getElementById("hud-progress-fill");
+    const hudTimerLabel = document.getElementById("hud-timer-label");
+    const btnCloseHud = document.getElementById("btn-close-hud");
+
+    function getLang() {
+      try {
+        if (window.I18N && typeof window.I18N.getLanguage === "function") {
+          return window.I18N.getLanguage();
+        }
+        const saved = localStorage.getItem("blewred_lang");
+        if (saved) return saved;
+      } catch (e) {}
+      return "ru";
+    }
+
+    const MODE_DEFINITIONS = {
+      0: {
+        num: "0",
+        theme: "theme-mode-0",
+        ru: {
+          name: "ГИБРИДНЫЙ РЕЖИМ (HYBRID)",
+          desc: "Защита экрана и видеоплеера активна"
+        },
+        en: {
+          name: "HYBRID MODE",
+          desc: "Screen and media player protection active"
+        }
+      },
+      1: {
+        num: "1",
+        theme: "theme-mode-1",
+        ru: {
+          name: "ТОЛЬКО ПЛЕЕР (PLAYER ONLY)",
+          desc: "Захват экрана отключен, CPU < 1%"
+        },
+        en: {
+          name: "PLAYER ONLY",
+          desc: "Screen capture off, player lookahead active (CPU < 1%)"
+        }
+      },
+      2: {
+        num: "2",
+        theme: "theme-mode-2",
+        ru: {
+          name: "ТОЛЬКО ЭКРАН (SCREEN ONLY)",
+          desc: "Непрерывный мониторинг рабочего стола"
+        },
+        en: {
+          name: "SCREEN ONLY",
+          desc: "Direct screen capture & OCR active"
+        }
+      },
+      3: {
+        num: "3",
+        theme: "theme-mode-3",
+        ru: {
+          name: "ЗАЩИТА ВЫКЛЮЧЕНА (STANDBY)",
+          desc: "Мониторинг приостановлен, цензура выключена"
+        },
+        en: {
+          name: "PROTECTION OFF (STANDBY)",
+          desc: "Monitoring paused, censorship deactivated"
+        }
+      }
+    };
+
+    function renderHotkeyBadge(combo) {
+      if (!combo) return "<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F1</kbd>";
+      const parts = combo.split("+").map(p => p.trim()).filter(Boolean);
+      return parts.map(p => `<kbd>${p}</kbd>`).join('+');
+    }
+
+    function renderMode(mode, hotkey) {
+      currentMode = Number(mode);
+      if (isNaN(currentMode) || currentMode < 0 || currentMode > 3) currentMode = 0;
+      if (hotkey) currentHotkey = hotkey;
+
+      const lang = getLang();
+      const def = MODE_DEFINITIONS[currentMode] || MODE_DEFINITIONS[0];
+      const localized = def[lang] || def.ru;
+
+      // Update theme and contents
+      hudPanel.className = `mode-hud-panel ${def.theme}`;
+      lblModeNum.textContent = def.num;
+      lblModeName.textContent = localized.name;
+      lblModeDesc.textContent = localized.desc;
+      lblModeHotkey.innerHTML = renderHotkeyBadge(currentHotkey);
+
+      if (window.I18N && typeof window.I18N.applyToDOM === "function") {
+        window.I18N.applyToDOM();
+      }
+
+      resetCountdown();
+    }
+
+    function resetCountdown() {
+      if (countdownTimer) clearInterval(countdownTimer);
+      countdownRemaining = TOTAL_DURATION_MS;
+      lastTickTime = Date.now();
+      updateCountdownUI();
+
+      countdownTimer = setInterval(() => {
+        const now = Date.now();
+        const delta = now - lastTickTime;
+        lastTickTime = now;
+        countdownRemaining = Math.max(0, countdownRemaining - delta);
+        updateCountdownUI();
+
+        if (countdownRemaining <= 0) {
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+          dismissHud();
+        }
+      }, 50);
+    }
+
+    function updateCountdownUI() {
+      const pct = Math.max(0, Math.min(100, (countdownRemaining / TOTAL_DURATION_MS) * 100));
+      hudProgressFill.style.width = `${pct}%`;
+      const secs = (countdownRemaining / 1000).toFixed(1);
+      hudTimerLabel.textContent = `${secs}s`;
+    }
+
+    function dismissHud() {
+      if (window.__TAURI__ && window.__TAURI__.core) {
+        window.__TAURI__.core.invoke("hide_mode_hud_cmd").catch(() => {});
+      }
+      try {
+        if (window.__TAURI__ && window.__TAURI__.window) {
+          window.__TAURI__.window.getCurrentWindow().hide();
+        }
+      } catch (e) {}
+    }
+
+    btnCloseHud.addEventListener("click", dismissHud);
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        dismissHud();
+      }
+    });
+
+    // Listen to Tauri event
+    if (window.__TAURI__ && window.__TAURI__.event) {
+      window.__TAURI__.event.listen("operation_mode_hud", (evt) => {
+        const payload = evt.payload;
+        if (payload && payload.mode !== undefined) {
+          renderMode(payload.mode, payload.hotkey);
+        }
+      });
+    }
+
+    // Connect to WebSocket for instant updates
+    function connectWs() {
+      try {
+        const ws = new WebSocket("ws://127.0.0.1:9002");
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "operation_mode_changed" && data.operation_mode !== undefined) {
+              renderMode(data.operation_mode);
+            } else if (data.type === "init_state") {
+              if (data.hotkey_mode) currentHotkey = data.hotkey_mode;
+              if (data.operation_mode !== undefined) {
+                renderMode(data.operation_mode, currentHotkey);
+              }
+            } else if (data.type === "hotkey_settings_changed" && data.hotkey_mode) {
+              currentHotkey = data.hotkey_mode;
+              lblModeHotkey.innerHTML = renderHotkeyBadge(currentHotkey);
+            }
+          } catch (e) {}
+        };
+        ws.onclose = () => {
+          setTimeout(connectWs, 2000);
+        };
+        ws.onerror = () => {
+          ws.close();
+        };
+      } catch (e) {}
+    }
+
+    connectWs();
+    renderMode(0, "Ctrl + Shift + F1");
+  </script>
+</body>
+</html>

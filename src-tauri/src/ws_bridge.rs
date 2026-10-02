@@ -172,6 +172,7 @@ pub async fn safe_set_operation_mode(
     }
 
     crate::settings::update_cached_settings(|s| s.operation_mode = mode);
+    crate::show_mode_hud(mode);
 
     let resp = json!({
         "type": "operation_mode_changed",
@@ -1202,6 +1203,7 @@ impl WSBridge {
                                         "hotkey_scope": crate::settings::get_cached_settings().hotkey_scope,
                                         "hotkey_panic": crate::settings::get_cached_settings().hotkey_panic,
                                         "hotkey_threat": crate::settings::get_cached_settings().hotkey_threat,
+                                        "hotkey_mode": crate::settings::get_cached_settings().hotkey_mode,
                                         "models_status": crate::downloader::ModelDownloader::check_models_status(),
                                         "censor_categories": vision_client.get_censor_categories(),
                                         "cues_count": lookahead_client.get_cues().len(),
@@ -2327,6 +2329,9 @@ impl WSBridge {
                                     if let Some(threat_key) = val.get("hotkey_threat").and_then(|v| v.as_str()) {
                                         crate::settings::update_cached_settings(|s| s.hotkey_threat = threat_key.to_string());
                                     }
+                                    if let Some(mode_key) = val.get("hotkey_mode").and_then(|v| v.as_str()) {
+                                        crate::settings::update_cached_settings(|s| s.hotkey_mode = mode_key.to_string());
+                                    }
                                     let cached = crate::settings::get_cached_settings();
                                     let _ = crate::settings::save_settings(&cached);
                                     crate::reload_global_hotkeys();
@@ -2335,6 +2340,7 @@ impl WSBridge {
                                         "hotkey_scope": cached.hotkey_scope,
                                         "hotkey_panic": cached.hotkey_panic,
                                         "hotkey_threat": cached.hotkey_threat,
+                                        "hotkey_mode": cached.hotkey_mode,
                                     });
                                     let _ = tx_bcast.send(resp.to_string());
                                 } else if msg_type == "toggle_emergency_shield" {

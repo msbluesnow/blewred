@@ -784,8 +784,16 @@
                 <span data-i18n="audit_header_title">Журнал инцидентов цензуры</span>
               </h3>
             </div>
-            <div class="panel-heading-right">
+            <div class="panel-heading-right" style="display: flex; align-items: center; gap: 6px;">
               <span class="label label-danger">LIVE AUDIT</span>
+              <button type="button" class="btn btn-default btn-xs" id="btn-audit-detach" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                <span data-i18n="audit_btn_detach">В отдельное окно</span>
+              </button>
               <button class="btn btn-default btn-xs" id="btn-clear-incidents">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
@@ -1140,17 +1148,23 @@
                     распознавания через WinRT OCR в список планировщика.</td>
                 </tr>
                 <tr>
-                  <td style="text-align: center; vertical-align: middle;">
-                    <span class="btn-kbd">0</span>
-                    <span class="btn-kbd">1</span>
-                    <span class="btn-kbd">2</span>
-                    <span class="btn-kbd">3</span>
+                  <td style="text-align: center; vertical-align: middle; padding: 10px 8px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                      <div class="hotkey-combo-badge" id="badge-hotkey-mode">
+                        <span class="btn-kbd" id="lbl-hotkey-mode">Ctrl + Shift + F1</span>
+                      </div>
+                      <button type="button" class="btn btn-default btn-xs hotkey-binder-btn" id="btn-rebind-mode"
+                        style="min-width: 90px; padding: 3px 10px;">
+                        <i class="glyphicon glyphicon-record"
+                          style="font-size: 9px; margin-right: 4px; color: #a855f7;"></i><span
+                          id="lbl-rebind-mode-text" data-i18n="hotkeys_btn_record">Записать</span>
+                      </button>
+                    </div>
                   </td>
                   <td style="text-align: left; vertical-align: middle; padding-left: 12px;"><strong
-                      style="color: #a78bfa;" data-i18n="hotkeys_row_modes_title">Режимы работы</strong></td>
+                      style="color: #c084fc;" data-i18n="hotkeys_row_mode_cycle_title">Смена режима защиты</strong></td>
                   <td style="text-align: left; vertical-align: middle; padding-left: 12px; line-height: 1.45;"
-                    data-i18n="hotkeys_row_modes_desc">Быстрое переключение: 0 — Гибридный, 1 — Только плеер, 2 — Только
-                    экран, 3 — Защита выключена (Standby).</td>
+                    data-i18n="hotkeys_row_mode_cycle_desc">Циклическое переключение режима (0: Гибридный ➔ 1: Только плеер ➔ 2: Только экран ➔ 3: Standby) с выводом всплывающего HUD-уведомления.</td>
                 </tr>
               </tbody>
             </table>

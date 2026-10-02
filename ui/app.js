@@ -225,8 +225,8 @@ function updateOperationModeUI(mode) {
 
   if (guardActiveBadge) {
     if (mode === 3) {
-      guardActiveBadge.className = "label label-default guard-active-badge guard-inactive";
-      guardActiveBadge.innerHTML = `<span class="pulsing-radar-dot gray"></span> ${isEn ? "PROTECTION DISABLED" : "ЗАЩИТА ВЫКЛ"}`;
+      guardActiveBadge.className = "label label-danger guard-active-badge";
+      guardActiveBadge.innerHTML = `<span class="pulsing-radar-dot red"></span> ${isEn ? "PROTECTION DISABLED" : "ЗАЩИТА ВЫКЛ"}`;
     } else {
       guardActiveBadge.className = "label label-success guard-active-badge";
       guardActiveBadge.innerHTML = `<span class="pulsing-radar-dot"></span> ${isEn ? "PROTECTION ACTIVE" : "ЗАЩИТА АКТИВНА"}`;
@@ -236,16 +236,16 @@ function updateOperationModeUI(mode) {
   if (modeEfficiencyBadge) {
     if (mode === 1) {
       modeEfficiencyBadge.textContent = isEn ? "CPU < 1% • Screen paused" : "CPU < 1% • Экран на паузе";
-      modeEfficiencyBadge.style.color = "#38bdf8";
-      modeEfficiencyBadge.style.background = "rgba(0, 180, 216, 0.14)";
-      modeEfficiencyBadge.style.borderColor = "rgba(0, 180, 216, 0.35)";
+      modeEfficiencyBadge.style.color = "#34d399";
+      modeEfficiencyBadge.style.background = "rgba(16, 185, 129, 0.14)";
+      modeEfficiencyBadge.style.borderColor = "rgba(16, 185, 129, 0.35)";
     } else if (mode === 2) {
       modeEfficiencyBadge.textContent = isOcrEnabled
         ? (isEn ? "Screen active • OCR enabled" : "Экран активен • OCR включен")
         : (isEn ? "Screen active • OCR disabled" : "Экран активен • OCR отключен");
-      modeEfficiencyBadge.style.color = "#4ade80";
-      modeEfficiencyBadge.style.background = "rgba(0, 230, 118, 0.14)";
-      modeEfficiencyBadge.style.borderColor = "rgba(0, 230, 118, 0.35)";
+      modeEfficiencyBadge.style.color = "#60a5fa";
+      modeEfficiencyBadge.style.background = "rgba(59, 130, 246, 0.14)";
+      modeEfficiencyBadge.style.borderColor = "rgba(59, 130, 246, 0.35)";
     } else if (mode === 3) {
       modeEfficiencyBadge.textContent = isEn ? "Protection disabled • Standby mode" : "Защита отключена • Режим ожидания (Standby)";
       modeEfficiencyBadge.style.color = "#ef4444";
@@ -255,9 +255,9 @@ function updateOperationModeUI(mode) {
       modeEfficiencyBadge.textContent = isOcrEnabled
         ? (isEn ? "Balanced mode" : "Сбалансированный режим")
         : (isEn ? "Balanced (OCR off)" : "Сбалансированный (OCR выкл)");
-      modeEfficiencyBadge.style.color = "#fbbf24";
-      modeEfficiencyBadge.style.background = "rgba(255, 183, 3, 0.14)";
-      modeEfficiencyBadge.style.borderColor = "rgba(255, 183, 3, 0.35)";
+      modeEfficiencyBadge.style.color = "#c084fc";
+      modeEfficiencyBadge.style.background = "rgba(168, 85, 247, 0.14)";
+      modeEfficiencyBadge.style.borderColor = "rgba(168, 85, 247, 0.35)";
     }
   }
 
@@ -678,6 +678,7 @@ const liveOcrTime = document.getElementById("live-ocr-time");
 const incidentsTbody = document.getElementById("incidents-tbody");
 const incidentsEmptyRow = document.getElementById("incidents-empty-row");
 const btnClearIncidents = document.getElementById("btn-clear-incidents");
+const btnAuditDetach = document.getElementById("btn-audit-detach");
 const btnRunNsfwSim = document.getElementById("btn-run-nsfw-sim");
 
 const statTotalIncidents = document.getElementById("stat-total-incidents");
@@ -1060,6 +1061,10 @@ function recordIncident(inc) {
   updateAuditStats();
   applyAuditFilter(activeAuditFilter);
 
+  if (window.__TAURI__ && window.__TAURI__.event && typeof window.__TAURI__.event.emit === "function") {
+    window.__TAURI__.event.emit("blewred://new-incident", inc).catch(() => {});
+  }
+
   while (incidentsTbody.children.length > 51) {
     incidentsTbody.removeChild(incidentsTbody.lastChild);
   }
@@ -1083,6 +1088,10 @@ function resolveCueIncident(cueId, timestamp) {
   activeIncidents = incidentsTbody.querySelectorAll("tr[data-active='true']").length;
   updateAuditStats();
   applyAuditFilter(activeAuditFilter);
+
+  if (window.__TAURI__ && window.__TAURI__.event && typeof window.__TAURI__.event.emit === "function") {
+    window.__TAURI__.event.emit("blewred://incident-resolved", { incident_id: cueId, timestamp }).catch(() => {});
+  }
 }
 
 function resolveSpecificIncident(incidentId, timestamp) {
@@ -1099,6 +1108,10 @@ function resolveSpecificIncident(incidentId, timestamp) {
     activeIncidents = incidentsTbody.querySelectorAll("tr[data-active='true']").length;
     updateAuditStats();
     applyAuditFilter(activeAuditFilter);
+
+    if (window.__TAURI__ && window.__TAURI__.event && typeof window.__TAURI__.event.emit === "function") {
+      window.__TAURI__.event.emit("blewred://incident-resolved", { incident_id: incidentId, timestamp }).catch(() => {});
+    }
   }
 }
 
@@ -1218,8 +1231,8 @@ function handleServerMessage(data) {
       if (data.ru_ocr_installed !== undefined || data.en_ocr_installed !== undefined) {
         updateOcrStatusUI(data.ru_ocr_installed, data.en_ocr_installed);
       }
-      if (data.hotkey_scope !== undefined || data.hotkey_panic !== undefined || data.hotkey_threat !== undefined) {
-        updateHotkeySettingsUI(data.hotkey_scope, data.hotkey_panic, data.hotkey_threat);
+      if (data.hotkey_scope !== undefined || data.hotkey_panic !== undefined || data.hotkey_threat !== undefined || data.hotkey_mode !== undefined) {
+        updateHotkeySettingsUI(data.hotkey_scope, data.hotkey_panic, data.hotkey_threat, data.hotkey_mode);
       }
       if (data.models_status) {
         updateModelsStatusUI(data.models_status);
@@ -1524,7 +1537,7 @@ function handleServerMessage(data) {
       break;
 
     case "hotkey_settings_changed":
-      updateHotkeySettingsUI(data.hotkey_scope, data.hotkey_panic, data.hotkey_threat);
+      updateHotkeySettingsUI(data.hotkey_scope, data.hotkey_panic, data.hotkey_threat, data.hotkey_mode);
       break;
 
     case "telemetry":
@@ -2432,6 +2445,22 @@ if (btnClearIncidents) {
     cuesIncidents = 0;
     activeIncidents = 0;
     updateAuditStats();
+
+    if (window.__TAURI__ && window.__TAURI__.event && typeof window.__TAURI__.event.emit === "function") {
+      window.__TAURI__.event.emit("blewred://audit-cleared", {}).catch(() => {});
+    }
+  });
+}
+
+if (btnAuditDetach) {
+  btnAuditDetach.addEventListener("click", () => {
+    if (window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.core.invoke === "function") {
+      window.__TAURI__.core.invoke("show_audit_window").catch(err => {
+        console.warn("[Audit] show_audit_window invoke error:", err);
+      });
+    } else {
+      window.open("audit_window.html", "blewred_audit", "width=960,height=620,resizable=yes");
+    }
   });
 }
 
@@ -3234,7 +3263,7 @@ function updateRecordingBadge(session) {
   if (!session || !session.target) return;
   const targetBadge = session.target === "panic"
     ? document.getElementById("badge-hotkey-panic")
-    : document.getElementById("badge-hotkey-threat");
+    : (session.target === "threat" ? document.getElementById("badge-hotkey-threat") : document.getElementById("badge-hotkey-mode"));
   if (!targetBadge || !session.latestCombo) return;
 
   const parts = session.latestCombo.replace(/-/g, "+").split("+").map(s => s.trim()).filter(Boolean);
@@ -3276,6 +3305,7 @@ function startHotkeyRecording(target) {
   if (target === "panic") {
     if (btnRebindPanic) btnRebindPanic.classList.add("btn-warning");
     if (btnRebindThreat) btnRebindThreat.classList.remove("btn-warning");
+    if (btnRebindMode) btnRebindMode.classList.remove("btn-warning");
     const lblPanic = document.getElementById("lbl-rebind-panic-text");
     if (lblPanic) lblPanic.innerText = recText;
     if (badgeHotkeyPanic) {
@@ -3284,10 +3314,20 @@ function startHotkeyRecording(target) {
   } else if (target === "threat") {
     if (btnRebindThreat) btnRebindThreat.classList.add("btn-warning");
     if (btnRebindPanic) btnRebindPanic.classList.remove("btn-warning");
+    if (btnRebindMode) btnRebindMode.classList.remove("btn-warning");
     const lblThreat = document.getElementById("lbl-rebind-threat-text");
     if (lblThreat) lblThreat.innerText = recText;
     if (badgeHotkeyThreat) {
       badgeHotkeyThreat.innerHTML = `<span class="label label-warning" style="font-size: 11px;"><i class="glyphicon glyphicon-record" style="font-size: 9px; margin-right: 4px;"></i>${promptText}</span>`;
+    }
+  } else if (target === "mode") {
+    if (btnRebindMode) btnRebindMode.classList.add("btn-warning");
+    if (btnRebindPanic) btnRebindPanic.classList.remove("btn-warning");
+    if (btnRebindThreat) btnRebindThreat.classList.remove("btn-warning");
+    const lblMode = document.getElementById("lbl-rebind-mode-text");
+    if (lblMode) lblMode.innerText = recText;
+    if (badgeHotkeyMode) {
+      badgeHotkeyMode.innerHTML = `<span class="label label-warning" style="font-size: 11px;"><i class="glyphicon glyphicon-record" style="font-size: 9px; margin-right: 4px;"></i>${promptText}</span>`;
     }
   }
 }
@@ -3302,12 +3342,15 @@ function cancelHotkeyRecording() {
 
   if (btnRebindPanic) btnRebindPanic.classList.remove("btn-warning");
   if (btnRebindThreat) btnRebindThreat.classList.remove("btn-warning");
+  if (btnRebindMode) btnRebindMode.classList.remove("btn-warning");
   const lblPanic = document.getElementById("lbl-rebind-panic-text");
   const lblThreat = document.getElementById("lbl-rebind-threat-text");
+  const lblMode = document.getElementById("lbl-rebind-mode-text");
   if (lblPanic) lblPanic.innerText = recordText;
   if (lblThreat) lblThreat.innerText = recordText;
+  if (lblMode) lblMode.innerText = recordText;
 
-  updateHotkeySettingsUI(currentHotkeyScope, currentHotkeyPanic, currentHotkeyThreat);
+  updateHotkeySettingsUI(currentHotkeyScope, currentHotkeyPanic, currentHotkeyThreat, currentHotkeyMode);
 }
 
 function finalizeHotkeyRecording() {
@@ -3321,6 +3364,8 @@ function finalizeHotkeyRecording() {
       currentHotkeyPanic = combo;
     } else if (target === "threat") {
       currentHotkeyThreat = combo;
+    } else if (target === "mode") {
+      currentHotkeyMode = combo;
     }
   }
 
@@ -3398,8 +3443,16 @@ window.addEventListener("keydown", (e) => {
     } else {
       setFpsMode(!isBoosted);
     }
+  } else if (matchesHotkey(e, currentHotkeyMode)) {
+    e.preventDefault();
+    cycleOperationMode();
   }
 });
+
+function cycleOperationMode() {
+  const nextMode = (currentOperationMode + 1) % 4;
+  setOperationMode(nextMode);
+}
 
 // Keyup listener: finalize recording immediately when ANY key is released
 window.addEventListener("keyup", (e) => {
@@ -3899,6 +3952,27 @@ if (window.__TAURI__ && window.__TAURI__.event) {
       updateHudMonitorsDropdown(lastMonitorsList, idx);
     }
   });
+
+  window.__TAURI__.event.listen("blewred://audit-cleared", () => {
+    if (incidentsTbody) {
+      incidentsTbody.innerHTML = `
+        <tr class="empty-row" id="incidents-empty-row">
+          <td colspan="6">
+            <div class="empty-state-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>${(window.I18N && window.I18N.getLanguage() === "en") ? "Journal cleared. No censorship incidents recorded." : "Журнал очищен. Инцидентов цензуры пока не зафиксировано."}</span>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+    totalIncidents = 0;
+    nsfwIncidents = 0;
+    ocrIncidents = 0;
+    cuesIncidents = 0;
+    activeIncidents = 0;
+    updateAuditStats();
+  });
 }
 
 
@@ -4016,17 +4090,22 @@ if (btnOpenOcrSettings) {
 let currentHotkeyScope = "global";
 let currentHotkeyPanic = "F9";
 let currentHotkeyThreat = "F8";
+let currentHotkeyMode = "Ctrl + Shift + F1";
 
 const radioScopeGlobal = document.getElementById("hotkey-scope-global");
 const radioScopeLocal = document.getElementById("hotkey-scope-local");
 const btnRebindPanic = document.getElementById("btn-rebind-panic");
 const btnRebindThreat = document.getElementById("btn-rebind-threat");
+const btnRebindMode = document.getElementById("btn-rebind-mode");
 const lblHotkeyPanic = document.getElementById("lbl-hotkey-panic");
 const lblHotkeyThreat = document.getElementById("lbl-hotkey-threat");
+const lblHotkeyMode = document.getElementById("lbl-hotkey-mode");
 const badgeHotkeyPanic = document.getElementById("badge-hotkey-panic");
 const badgeHotkeyThreat = document.getElementById("badge-hotkey-threat");
+const badgeHotkeyMode = document.getElementById("badge-hotkey-mode");
 const lblRebindPanicText = document.getElementById("lbl-rebind-panic-text");
 const lblRebindThreatText = document.getElementById("lbl-rebind-threat-text");
+const lblRebindModeText = document.getElementById("lbl-rebind-mode-text");
 
 const btnResetHotkeys = document.getElementById("btn-reset-hotkeys");
 const btnSaveHotkeys = document.getElementById("btn-save-hotkeys");
@@ -4043,10 +4122,11 @@ function updateLookaheadHudButtons() {
   }
 }
 
-function updateHotkeySettingsUI(scope, panic, threat) {
+function updateHotkeySettingsUI(scope, panic, threat, modeKey) {
   if (scope) currentHotkeyScope = scope;
   if (panic) currentHotkeyPanic = formatCanonicalCombo(parseHotkeyCombo(panic));
   if (threat) currentHotkeyThreat = formatCanonicalCombo(parseHotkeyCombo(threat));
+  if (modeKey) currentHotkeyMode = formatCanonicalCombo(parseHotkeyCombo(modeKey));
 
   if (radioScopeGlobal && radioScopeLocal) {
     if (currentHotkeyScope === "local") {
@@ -4068,6 +4148,12 @@ function updateHotkeySettingsUI(scope, panic, threat) {
     badgeHotkeyThreat.innerHTML = renderKeyComboBadge(tParsed);
   }
 
+  // Synchronize Mode Cycle badge
+  const mParsed = parseHotkeyCombo(currentHotkeyMode);
+  if (badgeHotkeyMode) {
+    badgeHotkeyMode.innerHTML = renderKeyComboBadge(mParsed);
+  }
+
   updateLookaheadHudButtons();
 }
 
@@ -4083,6 +4169,12 @@ if (btnRebindThreat) {
   });
 }
 
+if (btnRebindMode) {
+  btnRebindMode.addEventListener("click", () => {
+    startHotkeyRecording("mode");
+  });
+}
+
 if (btnSaveHotkeys) {
   btnSaveHotkeys.addEventListener("click", () => {
     const scope = (radioScopeLocal && radioScopeLocal.checked) ? "local" : "global";
@@ -4091,6 +4183,7 @@ if (btnSaveHotkeys) {
       localStorage.setItem("blewred_hotkey_scope", currentHotkeyScope);
       localStorage.setItem("blewred_hotkey_panic", currentHotkeyPanic);
       localStorage.setItem("blewred_hotkey_threat", currentHotkeyThreat);
+      localStorage.setItem("blewred_hotkey_mode", currentHotkeyMode);
     } catch (e) { }
 
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -4098,7 +4191,8 @@ if (btnSaveHotkeys) {
         type: "set_hotkey_settings",
         hotkey_scope: currentHotkeyScope,
         hotkey_panic: currentHotkeyPanic,
-        hotkey_threat: currentHotkeyThreat
+        hotkey_threat: currentHotkeyThreat,
+        hotkey_mode: currentHotkeyMode
       }));
     }
 
@@ -4107,8 +4201,8 @@ if (btnSaveHotkeys) {
       type: "system",
       timestamp: new Date().toTimeString().split(" ")[0],
       message: isEn
-        ? `[Hotkeys] Settings saved: Scope=${scope.toUpperCase()}, Panic=${currentHotkeyPanic}, Threat=${currentHotkeyThreat}`
-        : `[Горячие клавиши] Настройки сохранены: Область=${scope === "global" ? "Глобально" : "Локально"}, Паника=${currentHotkeyPanic}, Угроза=${currentHotkeyThreat}`
+        ? `[Hotkeys] Settings saved: Scope=${scope.toUpperCase()}, Panic=${currentHotkeyPanic}, Threat=${currentHotkeyThreat}, Mode=${currentHotkeyMode}`
+        : `[Горячие клавиши] Настройки сохранены: Область=${scope === "global" ? "Глобально" : "Локально"}, Паника=${currentHotkeyPanic}, Угроза=${currentHotkeyThreat}, Режим=${currentHotkeyMode}`
     });
 
     closeHotkeysModal();
@@ -4117,7 +4211,7 @@ if (btnSaveHotkeys) {
 
 if (btnResetHotkeys) {
   btnResetHotkeys.addEventListener("click", () => {
-    updateHotkeySettingsUI("global", "F9", "F8");
+    updateHotkeySettingsUI("global", "F9", "F8", "Ctrl + Shift + F1");
   });
 }
 

@@ -922,6 +922,11 @@ body {
   animation: none;
 }
 
+.pulsing-radar-dot.red {
+  background: #ef4444;
+  box-shadow: 0 0 6px #ef4444;
+}
+
 /* Real-time toggle switch inside panel header */
 .realtime-switch {
   display: inline-flex;
@@ -2286,42 +2291,56 @@ body {
   color: #94a3b8;
 }
 
-.mode-btn[data-mode="2"].active {
+/* Mode 1: Player Only (Green) */
+.mode-btn[data-mode="1"].active {
   background-color: #12151d;
   background-image: linear-gradient(to bottom, #10131a 0%, #171b24 100%);
   border-color: #10b981;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.25);
 }
 
-.mode-btn[data-mode="2"].active .mode-name {
-  color: #ffffff;
+.mode-btn[data-mode="1"].active .mode-name {
+  color: #34d399;
 }
 
+/* Mode 2: Screen Only (Blue) */
+.mode-btn[data-mode="2"].active {
+  background-color: #12151d;
+  background-image: linear-gradient(to bottom, #10131a 0%, #171b24 100%);
+  border-color: #3b82f6;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(59, 130, 246, 0.25);
+}
+
+.mode-btn[data-mode="2"].active .mode-name {
+  color: #60a5fa;
+}
+
+/* Mode 0: Hybrid (Purple) */
 .mode-btn[data-mode="0"].active {
   background-color: #12151d;
   background-image: linear-gradient(to bottom, #10131a 0%, #171b24 100%);
-  border-color: #f59e0b;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(245, 158, 11, 0.25);
+  border-color: #a855f7;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(168, 85, 247, 0.25);
 }
 
 .mode-btn[data-mode="0"].active .mode-name {
-  color: #ffffff;
+  color: #c084fc;
 }
 
-/* Standby / Protection Off: Active Gray Aesthetic */
+/* Mode 3: Standby / Protection Off: Red */
 .mode-btn[data-mode="3"].active {
-  background-color: #181d26;
-  background-image: linear-gradient(to bottom, #242c38 0%, #151a22 100%);
-  border-color: #64748b;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(100, 116, 139, 0.35);
+  background-color: #1a1214;
+  background-image: linear-gradient(to bottom, #241416 0%, #161012 100%);
+  border-color: #ef4444;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(239, 68, 68, 0.25);
 }
 
 .mode-btn[data-mode="3"].active .mode-name {
-  color: #e2e8f0;
+  color: #f87171;
 }
 
 .mode-btn[data-mode="3"].active .mode-sub {
-  color: #94a3b8;
+  color: #fca5a5;
 }
 
 /* ==========================================================================
